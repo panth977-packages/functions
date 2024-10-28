@@ -11,13 +11,3 @@
  */
 
 export * as FUNCTIONS from "./exports.ts";
-
-// mod.ts (entry point for your package)
-
-if (typeof Deno !== "undefined") {
-  // If running in Deno
-  await import("https://deno.land/x/zod@v3.21.4/mod.ts");
-} else {
-  // If running in Node.js
-  await import("npm:zod");
-}

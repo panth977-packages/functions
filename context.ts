@@ -1,5 +1,3 @@
-import { randomUUID } from "npm:crypto";
-
 export type Context = {
   id: string;
   log(...args: unknown[]): void;
@@ -8,7 +6,7 @@ export type Context = {
   getStack(): string | undefined;
 };
 
-export type BuildContext<C extends Context> = (context: Context | null) => C;
+export type BuildContext<C extends Context> = (context: Context | string) => C;
 
 type OnCreateInitFn = (context: Context) => void;
 type Logger = (context: Omit<Context, "log">, args: unknown[]) => void;
@@ -42,11 +40,13 @@ export const DefaultBuildContextOptions: {
   },
 };
 
-export const DefaultBuildContext: BuildContext<Context> = function (context) {
-  if (context) return Object.assign({}, context);
+export const DefaultBuildContext: BuildContext<Context> = function (_context) {
+  if (typeof _context !== "string") {
+    return Object.assign({}, _context);
+  }
   const dispose: Parameters<Context["onDispose"]>[0][] = [];
-  context = {
-    id: randomUUID(),
+  const context: Context = {
+    id: _context,
     async log(...args) {
       await Promise.allSettled([...[...loggers].map((fn) => fn(this, args))]);
     },

@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import {
   type BuildContext,
   type Context,
@@ -19,10 +20,10 @@ export type WFn<C, I, Y, N, O> = (
 
 export type WrapperBuild<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  Y extends Zod.ZodType = Zod.ZodType,
-  N extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  Y extends z.ZodType = z.ZodType,
+  N extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
 > = WFn<
@@ -35,10 +36,10 @@ export type WrapperBuild<
 
 export type _Params<
   //
-  I extends Zod.ZodType,
-  Y extends Zod.ZodType,
-  N extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  Y extends z.ZodType,
+  N extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
   W extends
@@ -65,10 +66,10 @@ export type _Params<
 
 export type Params<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  Y extends Zod.ZodType = Zod.ZodType,
-  N extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  Y extends z.ZodType = z.ZodType,
+  N extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
 > = {
@@ -87,10 +88,10 @@ export type Params<
 };
 export type Build<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  Y extends Zod.ZodType = Zod.ZodType,
-  N extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  Y extends z.ZodType = z.ZodType,
+  N extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
   W extends
@@ -99,17 +100,17 @@ export type Build<
       [],
 > =
   & Params<I, Y, N, O, L, C>
-  & Fn<Context | null, I["_input"], Y["_output"], N["_input"], O["_output"]>
+  & Fn<Context | string, I["_input"], Y["_output"], N["_input"], O["_output"]>
   & {
     wrappers: W;
   };
 
 export function build<
   //
-  I extends Zod.ZodType,
-  Y extends Zod.ZodType,
-  N extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  Y extends z.ZodType,
+  N extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
   W extends
@@ -142,7 +143,7 @@ export function build<
   };
   const wrappers = _params.wrappers?.(params) ?? ([] as W);
   const build: Fn<
-    Context | null,
+    Context | string,
     I["_input"],
     Y["_output"],
     N["_input"],

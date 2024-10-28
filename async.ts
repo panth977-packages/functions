@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import {
   type BuildContext,
   type Context,
@@ -14,23 +15,23 @@ export type Fn<C, I, O> = (context: C, input: I) => Return<O>;
 export type WFn<C, I, O> = (
   context: C,
   input: I,
-  func: Fn<C, I, O>,
+  func: Fn<C, I, O>
 ) => Return<O>;
 
 export type WrapperBuild<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
-  C extends Context = Context,
+  C extends Context = Context
 > = WFn<C & { params: Params<I, O, L, C> }, I["_output"], O["_input"]>;
 export type _Params<
   //
-  I extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
-  W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]],
+  W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]]
 > = {
   namespace?: string;
   name?: string;
@@ -43,10 +44,10 @@ export type _Params<
 };
 export type Params<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
-  C extends Context = Context,
+  C extends Context = Context
 > = {
   getNamespace(): string;
   setNamespace(namespace: string): void;
@@ -61,31 +62,22 @@ export type Params<
 };
 export type Build<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
-  W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]] = [],
-> =
-  & Params<I, O, L, C>
-  & Fn<Context | null, I["_input"], O["_output"]>
-  & { wrappers: W };
+  W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]] = []
+> = Params<I, O, L, C> &
+  Fn<Context | string, I["_input"], O["_output"]> & { wrappers: W };
 
 export function build<
   //
-  I extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
-  W extends
-    | []
-    | [
-      WrapperBuild<I, O, L, C>,
-      ...WrapperBuild<I, O, L, C>[],
-    ],
->(
-  _params: _Params<I, O, L, C, W>,
-): Build<I, O, L, C, W> {
+  W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]]
+>(_params: _Params<I, O, L, C, W>): Build<I, O, L, C, W> {
   const params: Params<I, O, L, C> = {
     getNamespace() {
       return `${_params.namespace}`;
@@ -109,17 +101,17 @@ export function build<
     buildContext: (_params.buildContext ?? DefaultBuildContext) as never,
   };
   const wrappers = _params.wrappers?.(params) ?? ([] as W);
-  const build: Fn<Context | null, I["_input"], O["_output"]> = (
+  const build: Fn<Context | string, I["_input"], O["_output"]> = (
     context,
-    input,
+    input
   ) =>
     [...wrappers, null].reduceRight(wrap, _params.func ?? unimplemented)(
       BuildContextWithParamsBuilder(
         params,
         params.buildContext as BuildContext<C>,
-        context,
+        context
       ),
-      input,
+      input
     );
   return Object.assign(build, params, { wrappers });
 }

@@ -23,9 +23,9 @@ export function Builder<P, I, R>({
     func: (context: Context, input: I) => R,
   ) => R)[];
   func?: (context: Context, input: I) => R;
-  buildContext?: (context: Context | null) => Context;
+  buildContext?: (context: Context | string) => Context;
 }) {
-  return (context: Context | null, input: I): R =>
+  return (context: Context | string, input: I): R =>
     [...(wrappers ?? []), null].reduceRight<(context: Context, input: I) => R>(
       function (func, wrapper) {
         if (wrapper) {

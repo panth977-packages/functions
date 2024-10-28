@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import {
   type BuildContext,
   type Context,
@@ -19,15 +20,15 @@ export type WFn<C, I, O> = (
 
 export type WrapperBuild<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
 > = WFn<C & { params: Params<I, O, L, C> }, I["_output"], O["_input"]>;
 export type _Params<
   //
-  I extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
   W extends [] | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]],
@@ -43,8 +44,8 @@ export type _Params<
 };
 export type Params<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
 > = {
@@ -61,8 +62,8 @@ export type Params<
 };
 export type Build<
   //
-  I extends Zod.ZodType = Zod.ZodType,
-  O extends Zod.ZodType = Zod.ZodType,
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
   L = unknown,
   C extends Context = Context,
   W extends
@@ -70,13 +71,13 @@ export type Build<
     | [WrapperBuild<I, O, L, C>, ...WrapperBuild<I, O, L, C>[]] = [],
 > =
   & Params<I, O, L, C>
-  & Fn<Context | null, I["_input"], O["_output"]>
+  & Fn<Context | string, I["_input"], O["_output"]>
   & { wrappers: W };
 
 export function build<
   //
-  I extends Zod.ZodType,
-  O extends Zod.ZodType,
+  I extends z.ZodType,
+  O extends z.ZodType,
   L,
   C extends Context,
   W extends
@@ -111,7 +112,7 @@ export function build<
     buildContext: (_params.buildContext ?? DefaultBuildContext) as never,
   };
   const wrappers = _params.wrappers?.(params) ?? ([] as W);
-  const build: Fn<Context | null, I["_input"], O["_output"]> = (
+  const build: Fn<Context | string, I["_input"], O["_output"]> = (
     context,
     input,
   ) =>

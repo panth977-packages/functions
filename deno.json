@@ -11,5 +11,8 @@
     "rules": {
       "exclude": ["no-explicit-any"]
     }
+  },
+  "imports": {
+    "zod": "npm:zod@^3.21.4"
   }
 }
