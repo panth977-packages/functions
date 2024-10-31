@@ -1,6 +1,6 @@
 {
   "name": "@panth977/functions",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "exports": "./mod.ts",
   "license": "MIT",
   "tasks": {
@@ -13,6 +13,9 @@
     }
   },
   "imports": {
-    "zod": "npm:zod@^3.21.4"
+    "zod": "npm:zod@^3.23.8"
+  },
+  "fmt": {
+    "lineWidth": 150
   }
 }
