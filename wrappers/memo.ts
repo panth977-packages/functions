@@ -7,28 +7,28 @@ export function MemoData<
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: AsyncFunction._Params<I, O, L, C>,
-  behavior: { getKey(input: I["_output"]): string | null; expSec: number },
+  _params: AsyncFunction._Params<I, O, L, C>,
+  behavior: { getKey(input: I["_output"]): string | null; expSec: number }
 ): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function MemoData<
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: SyncFunction._Params<I, O, L, C>,
-  behavior: { getKey(input: I["_output"]): string | null; expSec: number },
+  _params: SyncFunction._Params<I, O, L, C>,
+  behavior: { getKey(input: I["_output"]): string | null; expSec: number }
 ): SyncFunction.WrapperBuild<I, O, L, C>;
 export function MemoData(
-  params_: unknown,
-  behavior: { getKey(input: unknown): string | null; expSec: number },
+  _params: unknown,
+  behavior: { getKey(input: unknown): string | null; expSec: number }
 ): WrapperBuild {
-  const params = getParams(params_);
+  const { type } = getParams(_params);
   const cache: Record<string, unknown> = {};
   let Wrapper: WrapperBuild | undefined;
-  if (params.type === "function") {
+  if (type === "function") {
     Wrapper = function (context, input, func) {
       const key = behavior.getKey(input);
       if (key === null) return func(context, input);
@@ -38,7 +38,7 @@ export function MemoData(
       }
       return cache[key];
     } satisfies SyncFunction.WrapperBuild;
-  } else if (params.type === "async function") {
+  } else if (type === "async function") {
     Wrapper = async function (context, input, func) {
       const key = behavior.getKey(input);
       if (key === null) return func(context, input);

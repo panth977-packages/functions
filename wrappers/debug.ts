@@ -1,5 +1,11 @@
 import type { z } from "zod";
-import type { AsyncFunction, AsyncGenerator, Context, SyncFunction, SyncGenerator } from "../functions.ts";
+import type {
+  AsyncFunction,
+  AsyncGenerator,
+  Context,
+  SyncFunction,
+  SyncGenerator,
+} from "../functions.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
 import { assign } from "./instance.ts";
 
@@ -8,20 +14,20 @@ export function Debug<
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: AsyncFunction._Params<I, O, L, C>,
-  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean },
+  _params: AsyncFunction._Params<I, O, L, C>,
+  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean }
 ): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function Debug<
   //
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: SyncFunction._Params<I, O, L, C>,
-  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean },
+  _params: SyncFunction._Params<I, O, L, C>,
+  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean }
 ): SyncFunction.WrapperBuild<I, O, L, C>;
 export function Debug<
   //
@@ -30,16 +36,16 @@ export function Debug<
   N extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: SyncGenerator._Params<I, Y, N, O, L, C>,
+  _params: SyncGenerator._Params<I, Y, N, O, L, C>,
   behavior?: {
     maxTimeAllowed?: number;
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  },
+  }
 ): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function Debug<
   //
@@ -48,30 +54,30 @@ export function Debug<
   N extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: AsyncGenerator._Params<I, Y, N, O, L, C>,
+  _params: AsyncGenerator._Params<I, Y, N, O, L, C>,
   behavior?: {
     maxTimeAllowed?: number;
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  },
+  }
 ): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function Debug(
-  params_: unknown,
+  _params: unknown,
   behavior: {
     maxTimeAllowed?: number;
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  } = {},
+  } = {}
 ): WrapperBuild {
-  const params = getParams(params_);
+  const { type } = getParams(_params);
   let Wrapper: WrapperBuild | undefined;
-  if (params.type === "function") {
+  if (type === "function") {
     Wrapper = function (context, input, func) {
       const start = Date.now();
       try {
@@ -82,12 +88,15 @@ export function Debug(
       } finally {
         const timeTaken = Date.now() - start;
         context.log("⏳ Time", {
-          throttle: behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken ? true : false,
+          throttle:
+            behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
+              ? true
+              : false,
           time: timeTaken,
         });
       }
     } satisfies SyncFunction.WrapperBuild;
-  } else if (params.type === "async function") {
+  } else if (type === "async function") {
     Wrapper = async function (context, input, func) {
       const start = Date.now();
       try {
@@ -98,12 +107,15 @@ export function Debug(
       } finally {
         const timeTaken = Date.now() - start;
         context.log("⏳ Time", {
-          throttle: behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken ? true : false,
+          throttle:
+            behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
+              ? true
+              : false,
           time: timeTaken,
         });
       }
     } satisfies AsyncFunction.WrapperBuild;
-  } else if (params.type === "async function*") {
+  } else if (type === "async function*") {
     Wrapper = async function* (context, input, func) {
       const start = Date.now();
       try {
@@ -115,7 +127,10 @@ export function Debug(
           const timeTaken = Date.now() - start;
           context.log("⏳ Time", {
             yield: i,
-            throttle: behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken ? true : false,
+            throttle:
+              behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
+                ? true
+                : false,
             time: timeTaken,
           });
           i++;
@@ -132,7 +147,7 @@ export function Debug(
         });
       }
     } satisfies AsyncGenerator.WrapperBuild;
-  } else if (params.type === "function*") {
+  } else if (type === "function*") {
     Wrapper = function* (context, input, func) {
       const start = Date.now();
       try {
@@ -144,7 +159,10 @@ export function Debug(
           const timeTaken = Date.now() - start;
           context.log("⏳ Time", {
             yield: i,
-            throttle: behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken ? true : false,
+            throttle:
+              behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
+                ? true
+                : false,
             time: timeTaken,
           });
           i++;

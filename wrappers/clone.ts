@@ -1,5 +1,11 @@
 import type { z } from "zod";
-import type { AsyncFunction, AsyncGenerator, Context, SyncFunction, SyncGenerator } from "../functions.ts";
+import type {
+  AsyncFunction,
+  AsyncGenerator,
+  Context,
+  SyncFunction,
+  SyncGenerator,
+} from "../functions.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
 import { assign } from "./instance.ts";
 
@@ -8,20 +14,20 @@ export function CloneData<
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: AsyncFunction._Params<I, O, L, C>,
-  behavior?: { input?: boolean; output?: boolean },
+  _params: AsyncFunction._Params<I, O, L, C>,
+  behavior?: { input?: boolean; output?: boolean }
 ): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
   I extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: SyncFunction._Params<I, O, L, C>,
-  behavior?: { input?: boolean; output?: boolean },
+  _params: SyncFunction._Params<I, O, L, C>,
+  behavior?: { input?: boolean; output?: boolean }
 ): SyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
@@ -30,15 +36,15 @@ export function CloneData<
   N extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: SyncGenerator._Params<I, Y, N, O, L, C>,
+  _params: SyncGenerator._Params<I, Y, N, O, L, C>,
   behavior?: {
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  },
+  }
 ): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function CloneData<
   //
@@ -47,46 +53,46 @@ export function CloneData<
   N extends z.ZodType,
   O extends z.ZodType,
   L,
-  C extends Context,
+  C extends Context
 >(
-  params: AsyncGenerator._Params<I, Y, N, O, L, C>,
+  _params: AsyncGenerator._Params<I, Y, N, O, L, C>,
   behavior?: {
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  },
+  }
 ): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function CloneData(
-  params_: unknown,
+  _params: unknown,
   behavior: {
     input?: boolean;
     output?: boolean;
     yield?: boolean;
     next?: boolean;
-  } = {},
+  } = {}
 ):
   | AsyncFunction.WrapperBuild
   | SyncFunction.WrapperBuild
   | AsyncGenerator.WrapperBuild
   | SyncGenerator.WrapperBuild {
-  const params = getParams(params_);
+  const {type} = getParams(_params);
   let Wrapper: WrapperBuild | undefined;
-  if (params.type === "function") {
+  if (type === "function") {
     Wrapper = function (context, input, func) {
       if (behavior.input ?? true) input = structuredClone(input);
       let output = func(context, input);
       if (behavior.output ?? true) output = structuredClone(output);
       return output;
     } satisfies SyncFunction.WrapperBuild;
-  } else if (params.type === "async function") {
+  } else if (type === "async function") {
     Wrapper = async function (context, input, func) {
       if (behavior.input ?? true) input = structuredClone(input);
       let output = await func(context, input);
       if (behavior.output ?? true) output = structuredClone(output);
       return output;
     } satisfies AsyncFunction.WrapperBuild;
-  } else if (params.type === "async function*") {
+  } else if (type === "async function*") {
     Wrapper = async function* (context, input, func) {
       if (behavior.input ?? true) input = structuredClone(input);
       const g = func(context, input);
@@ -102,7 +108,7 @@ export function CloneData(
       if (behavior.output ?? true) output = structuredClone(output);
       return output;
     } satisfies AsyncGenerator.WrapperBuild;
-  } else if (params.type === "function*") {
+  } else if (type === "function*") {
     Wrapper = function* (context, input, func) {
       if (behavior.input ?? true) input = structuredClone(input);
       const g = func(context, input);
