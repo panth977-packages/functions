@@ -95,7 +95,7 @@ import { unimplemented, wrap } from "../_helper.ts";
  *     memo: {} as Record<number, number>,
  *   },
  *   wrappers: (params) => [
- *     FUNCTIONS.Wrappers.SafeParse(params, {input:true,output:false}),
+ *     FUNCTIONS.WRAPPERS.SafeParse(params, {input:true,output:false}),
  *     function (context, input, func, build) {
  *       return build.static.memo[input] ??= func(context, input);
  *     }

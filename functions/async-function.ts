@@ -95,7 +95,7 @@ import { unimplemented, wrap } from "../_helper.ts";
  *     query: `SELECT * FROM users WHERE id = ? LIMIT 1`
  *   },
  *   wrappers: (params) => [
- *     FUNCTIONS.Wrappers.SafeParse(params, {input:true,output:false}),
+ *     FUNCTIONS.WRAPPERS.SafeParse(params, {input:true,output:false}),
  *   ],
  *   async func(context, {userId}, build) {
  *     const results = await db.query(build.static.query, [userId]);

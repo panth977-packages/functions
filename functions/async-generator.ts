@@ -129,7 +129,7 @@ import { unimplemented, wrap } from "../_helper.ts";
  *     `,
  *   },
  *   wrappers: (params) => [
- *     FUNCTIONS.Wrappers.SafeParse(params, {input:true,output:false}),
+ *     FUNCTIONS.WRAPPERS.SafeParse(params, {input:true,output:false}),
  *   ],
  *   async *func(context, { userId, limit }, build) {
  *     let results;
