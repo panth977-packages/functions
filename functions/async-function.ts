@@ -73,7 +73,7 @@ import { unimplemented, wrap } from "../_helper.ts";
     | []
     | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]],
 > =
-  & ((context: Context | string, input: I["_input"]) => Promise<O["_output"]>)
+  & ((context: Context | string | null, input: I["_input"]) => Promise<O["_output"]>)
   & _Params<I, O, S, C>
   & { wrappers: W };
 
@@ -133,7 +133,7 @@ import { unimplemented, wrap } from "../_helper.ts";
     static: params.static as never,
     buildContext: (params.buildContext ?? DefaultBuildContext) as never,
   };
-  const func = (context: Context | string, input: I["_input"]) =>
+  const func = (context: Context | string | null, input: I["_input"]) =>
     [...build.wrappers, null].reduceRight(wrap, params.func ?? unimplemented)(
       build.buildContext(context) as C,
       input,

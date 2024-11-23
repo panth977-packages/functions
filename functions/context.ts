@@ -6,7 +6,7 @@ export type Context = {
   getStack(): string | undefined;
 };
 
-export type BuildContext<C extends Context> = (context: Context | string) => C;
+export type BuildContext<C extends Context> = (context: Context | string | null) => C;
 
 type OnCreateInitFn = (context: Context) => void;
 type Logger = (context: Omit<Context, "log">, args: unknown[]) => void;
@@ -41,6 +41,7 @@ export const DefaultBuildContextOptions: {
 };
 
 export const DefaultBuildContext: BuildContext<Context> = function (_context) {
+  _context ??= crypto.randomUUID();
   if (typeof _context !== "string") {
     return Object.assign({}, _context);
   }

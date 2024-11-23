@@ -93,7 +93,7 @@ import { unimplemented, wrap } from "../_helper.ts";
       | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]],
 > =
   & ((
-    context: Context | string,
+    context: Context | string | null,
     input: I["_input"],
   ) => AsyncGenerator<Y["_output"], O["_output"], N["_input"]>)
   & _Params<I, Y, N, O, S, C>
@@ -178,7 +178,7 @@ import { unimplemented, wrap } from "../_helper.ts";
     static: params.static as never,
     buildContext: (params.buildContext ?? DefaultBuildContext) as never,
   };
-  const func = (context: Context | string, input: I["_input"]) =>
+  const func = (context: Context | string | null, input: I["_input"]) =>
     [...build.wrappers, null].reduceRight(wrap, params.func ?? unimplemented)(
       build.buildContext(context) as C,
       input,
