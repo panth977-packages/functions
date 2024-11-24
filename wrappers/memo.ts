@@ -1,11 +1,10 @@
-import type { z } from "zod";
 import type { AsyncFunction, Context, SyncFunction } from "../functions.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
-import { assign } from "./instance.ts";
+import { assign } from "./_helper.ts";
 
 export function MemoData<
-  I extends z.ZodType,
-  O extends z.ZodType,
+  I extends AsyncFunction.zInput,
+  O extends AsyncFunction.zOutput,
   L,
   C extends Context
 >(
@@ -13,8 +12,8 @@ export function MemoData<
   behavior: { getKey(input: I["_output"]): string | null; expSec: number }
 ): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function MemoData<
-  I extends z.ZodType,
-  O extends z.ZodType,
+  I extends SyncFunction.zInput,
+  O extends SyncFunction.zOutput,
   L,
   C extends Context
 >(

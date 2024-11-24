@@ -1,4 +1,3 @@
-import type { z } from "zod";
 import type {
   AsyncFunction,
   AsyncGenerator,
@@ -7,12 +6,12 @@ import type {
   SyncGenerator,
 } from "../functions.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
-import { assign } from "./instance.ts";
+import { assign } from "./_helper.ts";
 
 export function CloneData<
   //
-  I extends z.ZodType,
-  O extends z.ZodType,
+  I extends AsyncFunction.zInput,
+  O extends AsyncFunction.zOutput,
   L,
   C extends Context
 >(
@@ -21,8 +20,8 @@ export function CloneData<
 ): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
-  I extends z.ZodType,
-  O extends z.ZodType,
+  I extends SyncFunction.zInput,
+  O extends SyncFunction.zOutput,
   L,
   C extends Context
 >(
@@ -31,10 +30,10 @@ export function CloneData<
 ): SyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
-  I extends z.ZodType,
-  Y extends z.ZodType,
-  N extends z.ZodType,
-  O extends z.ZodType,
+  I extends SyncGenerator.zInput,
+  Y extends SyncGenerator.zYield,
+  N extends SyncGenerator.zNext,
+  O extends SyncGenerator.zOutput,
   L,
   C extends Context
 >(
@@ -48,10 +47,10 @@ export function CloneData<
 ): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function CloneData<
   //
-  I extends z.ZodType,
-  Y extends z.ZodType,
-  N extends z.ZodType,
-  O extends z.ZodType,
+  I extends AsyncGenerator.zInput,
+  Y extends AsyncGenerator.zYield,
+  N extends AsyncGenerator.zNext,
+  O extends AsyncGenerator.zOutput,
   L,
   C extends Context
 >(

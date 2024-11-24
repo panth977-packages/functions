@@ -10,11 +10,16 @@ import {
 } from "./context.ts";
 import { unimplemented, wrap } from "../_helper.ts";
 
+export type zInput = z.ZodType;
+export type zOutput = z.ZodType;
+export type defaultZInput = z.ZodType;
+export type defaultZOutput = z.ZodType;
+
 /**
  * Wrapper Type for Sync Function
  */ export type WrapperBuild<
-  I extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = (
@@ -24,16 +29,16 @@ import { unimplemented, wrap } from "../_helper.ts";
   build: Build<I, O, S, C>
 ) => O["_input"];
 export type Wrappers<
-  I extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = [] | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]];
 /**
  * Input Params for Sync Function builder
  */ export type Params<
-  I extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, O, S, C> = Wrappers<I, O, S, C>
@@ -54,8 +59,8 @@ export type Wrappers<
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
-  I extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = {
@@ -73,8 +78,8 @@ export type Wrappers<
 /**
  * Build Type, Output of the Sync Function builder
  */ export type Build<
-  I extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, O, S, C> = Wrappers<I, O, S, C>
@@ -111,8 +116,8 @@ export type Wrappers<
  * });
  * ```
  */ export function build<
-  I extends z.ZodType,
-  O extends z.ZodType,
+  I extends zInput,
+  O extends zOutput,
   S,
   C extends Context,
   W extends Wrappers<I, O, S, C>

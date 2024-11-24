@@ -10,13 +10,22 @@ import {
 } from "./context.ts";
 import { unimplemented, wrap } from "../_helper.ts";
 
+export type zInput = z.ZodType;
+export type zYield = z.ZodType;
+export type zNext = z.ZodType;
+export type zOutput = z.ZodType;
+export type defaultZInput = z.ZodType;
+export type defaultZYield = z.ZodType;
+export type defaultZNext = z.ZodType;
+export type defaultZOutput = z.ZodType;
+
 /**
  * Wrapper Type for Async Generator
  */ export type WrapperBuild<
-  I extends z.ZodType = z.ZodType,
-  Y extends z.ZodType = z.ZodType,
-  N extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  Y extends zYield = defaultZYield,
+  N extends zNext = defaultZNext,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = (
@@ -29,20 +38,20 @@ import { unimplemented, wrap } from "../_helper.ts";
   build: Build<I, Y, N, O, S, C>
 ) => AsyncGenerator<Y["_input"], O["_input"], N["_output"]>;
 export type Wrappers<
-  I extends z.ZodType = z.ZodType,
-  Y extends z.ZodType = z.ZodType,
-  N extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  Y extends zYield = defaultZYield,
+  N extends zNext = defaultZNext,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = [] | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]];
 /**
  * Input Params for Async Generator builder
  */ export type Params<
-  I extends z.ZodType = z.ZodType,
-  Y extends z.ZodType = z.ZodType,
-  N extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  Y extends zYield = defaultZYield,
+  N extends zNext = defaultZNext,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
@@ -65,10 +74,10 @@ export type Wrappers<
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
-  I extends z.ZodType = z.ZodType,
-  Y extends z.ZodType = z.ZodType,
-  N extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  Y extends zYield = defaultZYield,
+  N extends zNext = defaultZNext,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context
 > = {
@@ -88,10 +97,10 @@ export type Wrappers<
 /**
  * Build Type, Output of the Async Generator builder
  */ export type Build<
-  I extends z.ZodType = z.ZodType,
-  Y extends z.ZodType = z.ZodType,
-  N extends z.ZodType = z.ZodType,
-  O extends z.ZodType = z.ZodType,
+  I extends zInput = defaultZInput,
+  Y extends zYield = defaultZYield,
+  N extends zNext = defaultZNext,
+  O extends zOutput = defaultZOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
@@ -146,10 +155,10 @@ export type Wrappers<
  * });
  * ```
  */ export function build<
-  I extends z.ZodType,
-  Y extends z.ZodType,
-  N extends z.ZodType,
-  O extends z.ZodType,
+  I extends zInput,
+  Y extends zYield,
+  N extends zNext,
+  O extends zOutput,
   S,
   C extends Context,
   W extends Wrappers<I, Y, N, O, S, C>
