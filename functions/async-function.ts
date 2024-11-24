@@ -3,7 +3,11 @@
  * @module
  */
 import type { z } from "zod";
-import { type BuildContext, type Context, DefaultBuildContext } from "./context.ts";
+import {
+  type BuildContext,
+  type Context,
+  DefaultBuildContext,
+} from "./context.ts";
 import { unimplemented, wrap } from "../_helper.ts";
 
 /**
@@ -12,13 +16,19 @@ import { unimplemented, wrap } from "../_helper.ts";
   I extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
   S = any,
-  C extends Context = Context,
+  C extends Context = Context
 > = (
   context: C,
   input: I["_output"],
   func: (context: C, input: I["_output"]) => Promise<O["_input"]>,
-  build: Build<I, O, S, C>,
+  build: Build<I, O, S, C>
 ) => Promise<O["_input"]>;
+export type Wrappers<
+  I extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
+  S = any,
+  C extends Context = Context
+> = [] | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]];
 /**
  * Input Params for Async Function builder
  */ export type Params<
@@ -26,9 +36,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType = z.ZodType,
   S = any,
   C extends Context = Context,
-  W extends [] | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]] =
-    | []
-    | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]],
+  W extends Wrappers<I, O, S, C> = Wrappers<I, O, S, C>
 > = {
   namespace?: string;
   name?: string;
@@ -39,7 +47,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   func?: (
     context: C,
     input: I["_output"],
-    build: Build<I, O, S, C, W>,
+    build: Build<I, O, S, C, W>
   ) => Promise<O["_input"]>;
   buildContext?: BuildContext<C>;
 };
@@ -49,7 +57,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   I extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
   S = any,
-  C extends Context = Context,
+  C extends Context = Context
 > = {
   getNamespace(): string;
   setNamespace(namespace: string): void;
@@ -69,13 +77,12 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType = z.ZodType,
   S = any,
   C extends Context = Context,
-  W extends [] | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]] =
-    | []
-    | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]],
-> =
-  & ((context: Context | string | null, input: I["_input"]) => Promise<O["_output"]>)
-  & _Params<I, O, S, C>
-  & { wrappers: W };
+  W extends Wrappers<I, O, S, C> = Wrappers<I, O, S, C>
+> = ((
+  context: Context | string | null,
+  input: I["_input"]
+) => Promise<O["_output"]>) &
+  _Params<I, O, S, C> & { wrappers: W };
 
 /**
  * A Async Function Builder
@@ -109,7 +116,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType,
   S,
   C extends Context,
-  W extends [] | [WrapperBuild<I, O, S, C>, ...WrapperBuild<I, O, S, C>[]],
+  W extends Wrappers<I, O, S, C>
 >(params: Params<I, O, S, C, W>): Build<I, O, S, C, W> {
   const _params: _Params<I, O, S, C> = {
     getNamespace() {
@@ -137,7 +144,7 @@ import { unimplemented, wrap } from "../_helper.ts";
     [...build.wrappers, null].reduceRight(wrap, params.func ?? unimplemented)(
       build.buildContext(context) as C,
       input,
-      build,
+      build
     );
   const build = Object.assign(func, _params, {
     wrappers: params.wrappers?.(_params) ?? ([] as W),

@@ -3,7 +3,11 @@
  * @module
  */
 import type { z } from "zod";
-import { type BuildContext, type Context, DefaultBuildContext } from "./context.ts";
+import {
+  type BuildContext,
+  type Context,
+  DefaultBuildContext,
+} from "./context.ts";
 import { unimplemented, wrap } from "../_helper.ts";
 
 /**
@@ -14,16 +18,24 @@ import { unimplemented, wrap } from "../_helper.ts";
   N extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
   S = any,
-  C extends Context = Context,
+  C extends Context = Context
 > = (
   context: C,
   input: I["_output"],
   func: (
     context: C,
-    input: I["_output"],
+    input: I["_output"]
   ) => AsyncGenerator<Y["_input"], O["_input"], N["_output"]>,
-  build: Build<I, Y, N, O, S, C>,
+  build: Build<I, Y, N, O, S, C>
 ) => AsyncGenerator<Y["_input"], O["_input"], N["_output"]>;
+export type Wrappers<
+  I extends z.ZodType = z.ZodType,
+  Y extends z.ZodType = z.ZodType,
+  N extends z.ZodType = z.ZodType,
+  O extends z.ZodType = z.ZodType,
+  S = any,
+  C extends Context = Context
+> = [] | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]];
 /**
  * Input Params for Async Generator builder
  */ export type Params<
@@ -33,11 +45,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType = z.ZodType,
   S = any,
   C extends Context = Context,
-  W extends
-    | []
-    | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]] =
-      | []
-      | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]],
+  W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
 > = {
   namespace?: string;
   name?: string;
@@ -50,7 +58,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   func?: (
     context: C,
     input: I["_output"],
-    build: Build<I, Y, N, O, S, C, W>,
+    build: Build<I, Y, N, O, S, C, W>
   ) => AsyncGenerator<Y["_input"], O["_input"], N["_output"]>;
   buildContext?: BuildContext<C>;
 };
@@ -62,7 +70,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   N extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
   S = any,
-  C extends Context = Context,
+  C extends Context = Context
 > = {
   getNamespace(): string;
   setNamespace(namespace: string): void;
@@ -86,18 +94,12 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType = z.ZodType,
   S = any,
   C extends Context = Context,
-  W extends
-    | []
-    | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]] =
-      | []
-      | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]],
-> =
-  & ((
-    context: Context | string | null,
-    input: I["_input"],
-  ) => AsyncGenerator<Y["_output"], O["_output"], N["_input"]>)
-  & _Params<I, Y, N, O, S, C>
-  & { wrappers: W };
+  W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
+> = ((
+  context: Context | string | null,
+  input: I["_input"]
+) => AsyncGenerator<Y["_output"], O["_output"], N["_input"]>) &
+  _Params<I, Y, N, O, S, C> & { wrappers: W };
 
 /**
  * A Async Generator Builder
@@ -150,9 +152,7 @@ import { unimplemented, wrap } from "../_helper.ts";
   O extends z.ZodType,
   S,
   C extends Context,
-  W extends
-    | []
-    | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]],
+  W extends Wrappers<I, Y, N, O, S, C>
 >(params: Params<I, Y, N, O, S, C, W>): Build<I, Y, N, O, S, C, W> {
   const _params: _Params<I, Y, N, O, S, C> = {
     getNamespace() {
@@ -182,7 +182,7 @@ import { unimplemented, wrap } from "../_helper.ts";
     [...build.wrappers, null].reduceRight(wrap, params.func ?? unimplemented)(
       build.buildContext(context) as C,
       input,
-      build,
+      build
     );
   const build = Object.assign(func, _params, {
     wrappers: params.wrappers?.(_params) ?? ([] as W),
