@@ -1,4 +1,4 @@
-import type { AsyncFunction, Context, SyncFunction } from "../functions.ts";
+import type { AsyncFunction, Context, SyncFunction } from "../functions/index.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
 import { assign } from "./_helper.ts";
 

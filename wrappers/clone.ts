@@ -4,7 +4,7 @@ import type {
   Context,
   SyncFunction,
   SyncGenerator,
-} from "../functions.ts";
+} from "../functions/index.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
 import { assign } from "./_helper.ts";
 
