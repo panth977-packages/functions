@@ -3,10 +3,13 @@ export type Context = {
   log(...args: unknown[]): void;
   onDispose: (exe: () => void) => void;
   dispose: () => Promise<void>;
+  path: string[];
   getStack(): string | undefined;
 };
 
-export type BuildContext<C extends Context> = (context: Context | string | null) => C;
+export type BuildContext<C extends Context> = (
+  context: Context | string | null
+) => C;
 
 type OnCreateInitFn = (context: Context) => void;
 type Logger = (context: Omit<Context, "log">, args: unknown[]) => void;
@@ -43,11 +46,12 @@ export const DefaultBuildContextOptions: {
 export const DefaultBuildContext: BuildContext<Context> = function (_context) {
   _context ??= crypto.randomUUID();
   if (typeof _context !== "string") {
-    return Object.assign({}, _context);
+    return Object.assign({}, _context, { path: [..._context.path] });
   }
   const dispose: Parameters<Context["onDispose"]>[0][] = [];
   const context: Context = {
     id: _context,
+    path: [],
     async log(...args) {
       await Promise.allSettled([...[...loggers].map((fn) => fn(this, args))]);
     },
@@ -61,7 +65,7 @@ export const DefaultBuildContext: BuildContext<Context> = function (_context) {
       ]);
     },
     getStack() {
-      return new Error().stack?.substring(5);
+      return this.path.map(x => '\n\t-->> ' + x).join('');
     },
   };
   Promise.allSettled([...[...onCreateInitFn].map((fn) => fn(context))]);

@@ -14,17 +14,14 @@ export type zInput = z.ZodType;
 export type zYield = z.ZodType;
 export type zNext = z.ZodType;
 export type zOutput = z.ZodType;
-export type defaultZInput = z.ZodType;
-export type defaultZYield = z.ZodType;
-export type defaultZNext = z.ZodType;
-export type defaultZOutput = z.ZodType;
+
 /**
  * Wrapper Type for Sync Generator
  */ export type WrapperBuild<
-  I extends zInput = defaultZInput,
-  Y extends zYield = defaultZYield,
-  N extends zNext = defaultZNext,
-  O extends zOutput = defaultZOutput,
+  I extends zInput = zInput,
+  Y extends zYield = zYield,
+  N extends zNext = zNext,
+  O extends zOutput = zOutput,
   S = any,
   C extends Context = Context
 > = (
@@ -37,20 +34,20 @@ export type defaultZOutput = z.ZodType;
   build: Build<I, Y, N, O, S, C>
 ) => Generator<Y["_input"], O["_input"], N["_output"]>;
 export type Wrappers<
-  I extends zInput = defaultZInput,
-  Y extends zYield = defaultZYield,
-  N extends zNext = defaultZNext,
-  O extends zOutput = defaultZOutput,
+  I extends zInput = zInput,
+  Y extends zYield = zYield,
+  N extends zNext = zNext,
+  O extends zOutput = zOutput,
   S = any,
   C extends Context = Context
 > = [] | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]];
 /**
  * Input Params for Sync Generator builder
  */ export type Params<
-  I extends zInput = defaultZInput,
-  Y extends zYield = defaultZYield,
-  N extends zNext = defaultZNext,
-  O extends zOutput = defaultZOutput,
+  I extends zInput = zInput,
+  Y extends zYield = zYield,
+  N extends zNext = zNext,
+  O extends zOutput = zOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
@@ -73,10 +70,10 @@ export type Wrappers<
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
-  I extends zInput = defaultZInput,
-  Y extends zYield = defaultZYield,
-  N extends zNext = defaultZNext,
-  O extends zOutput = defaultZOutput,
+  I extends zInput = zInput,
+  Y extends zYield = zYield,
+  N extends zNext = zNext,
+  O extends zOutput = zOutput,
   S = any,
   C extends Context = Context
 > = {
@@ -96,10 +93,10 @@ export type Wrappers<
 /**
  * Build Type, Output of the Sync Generator builder
  */ export type Build<
-  I extends zInput = defaultZInput,
-  Y extends zYield = defaultZYield,
-  N extends zNext = defaultZNext,
-  O extends zOutput = defaultZOutput,
+  I extends zInput = zInput,
+  Y extends zYield = zYield,
+  N extends zNext = zNext,
+  O extends zOutput = zOutput,
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
@@ -173,7 +170,7 @@ export type Wrappers<
       params.name = name;
     },
     getRef() {
-      return `${params.namespace}['${params.name}']`;
+      return `${params.namespace}.${params.name}`;
     },
     input: params.input,
     output: params.output,
@@ -183,12 +180,15 @@ export type Wrappers<
     static: params.static as never,
     buildContext: (params.buildContext ?? DefaultBuildContext) as never,
   };
-  const func = (context: Context | string | null, input: I["_input"]) =>
-    [...build.wrappers, null].reduceRight(wrap, params.func ?? unimplemented)(
-      build.buildContext(context) as C,
-      input,
-      build
+  const func = (context: Context | string | null, input: I["_input"]) => {
+    const c = build.buildContext(context) as C;
+    const fn = [...build.wrappers, null].reduceRight(
+      wrap,
+      params.func ?? unimplemented
     );
+    c.path.push(build.getRef());
+    return fn(c, input, build);
+  };
   const build = Object.assign(func, _params, {
     wrappers: params.wrappers?.(_params) ?? ([] as W),
   });
