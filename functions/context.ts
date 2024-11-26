@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 export type Context = {
   id: string;
   log(...args: unknown[]): void;
@@ -44,7 +46,7 @@ export const DefaultBuildContextOptions: {
 };
 
 export const DefaultBuildContext: BuildContext<Context> = function (_context) {
-  _context ??= crypto.randomUUID();
+  _context ??= randomUUID() as string;
   if (typeof _context !== "string") {
     return Object.assign({}, _context, { path: [..._context.path] });
   }
