@@ -114,7 +114,7 @@ export type Wrappers<
  *       return build.static.memo[input] ??= func(context, input);
  *     }
  *   ],
- *   func(context, num, build) {
+ *   func({context, input: num, build}) {
  *     if (num <= 2) return 1;
  *     return build(context, num - 1) + build(context, num - 2);
  *   }

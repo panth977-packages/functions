@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from "crypto";
 
 export type Context = {
   id: string;
@@ -7,6 +7,10 @@ export type Context = {
   dispose: () => Promise<void>;
   path: string[];
   getStack(): string | undefined;
+  getState<T>(arg: { key: symbol; _type: T }): T;
+  setState<T>(arg: { key: symbol; val?: T; cascade?: boolean }): void;
+  state: Record<symbol, unknown>;
+  cascadedState: Record<symbol, unknown>;
 };
 
 export type BuildContext<C extends Context> = (
@@ -48,7 +52,7 @@ export const DefaultBuildContextOptions: {
 export const DefaultBuildContext: BuildContext<Context> = function (_context) {
   _context ??= randomUUID() as string;
   if (typeof _context !== "string") {
-    return Object.assign({}, _context, { path: [..._context.path] });
+    return Object.assign({}, _context, { path: [..._context.path], state: {} });
   }
   const dispose: Parameters<Context["onDispose"]>[0][] = [];
   const context: Context = {
@@ -66,8 +70,26 @@ export const DefaultBuildContext: BuildContext<Context> = function (_context) {
         ...[...onDisposeExes].map((exe) => exe(this)),
       ]);
     },
+    state: {},
+    cascadedState: {},
     getStack() {
-      return this.path.map(x => '\n\t-->> ' + x).join('');
+      return this.path.map((x) => "\n\t-->> " + x).join("");
+    },
+    setState({ key, val, cascade }) {
+      if (cascade) {
+        this.cascadedState[key] = val;
+      } else {
+        this.state[key] = val;
+      }
+    },
+    getState({ key }) {
+      if (key in this.state) {
+        return this.state[key] as any;
+      }
+      if (key in this.cascadedState) {
+        return this.cascadedState[key] as any;
+      }
+      throw new Error('State was never declared!');
     },
   };
   Promise.allSettled([...[...onCreateInitFn].map((fn) => fn(context))]);

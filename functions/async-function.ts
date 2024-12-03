@@ -110,7 +110,7 @@ export type Wrappers<
  *   wrappers: (_params) => [
  *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
- *   async func(context, {userId}, build) {
+ *   async func({context, input: {userId}, build}) {
  *     const results = await db.query(build.static.query, [userId]);
  *     const userObj = results.rows[0];
  *     return userObj ?? null;

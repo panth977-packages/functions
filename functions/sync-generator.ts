@@ -129,7 +129,7 @@ export type Wrappers<
  *   wrappers: (_params) => [
  *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
- *   *func(context, limit, build) {
+ *   *func({context, input: limit, build}) {
  *     let n = 1;
  *     while (true) {
  *       const fibs = [];

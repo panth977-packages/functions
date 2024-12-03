@@ -139,7 +139,7 @@ export type Wrappers<
  *   wrappers: (_params) => [
  *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
- *   async *func(context, { userId, limit }, build) {
+ *   async *func({context, input: { userId, limit }, build}) {
  *     let results;
  *     let returnedCount = 0;
  *     do {
