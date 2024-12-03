@@ -14,20 +14,22 @@ export function CloneData<
   O extends AsyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncFunction._Params<I, O, L, C>,
-  behavior?: { input?: boolean; output?: boolean }
-): AsyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: AsyncFunction._Params<I, O, L, C>;
+  input?: boolean;
+  output?: boolean;
+}): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
   I extends SyncFunction.zInput,
   O extends SyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: SyncFunction._Params<I, O, L, C>,
-  behavior?: { input?: boolean; output?: boolean }
-): SyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: SyncFunction._Params<I, O, L, C>;
+  input?: boolean;
+  output?: boolean;
+}): SyncFunction.WrapperBuild<I, O, L, C>;
 export function CloneData<
   //
   I extends SyncGenerator.zInput,
@@ -36,15 +38,14 @@ export function CloneData<
   O extends SyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: SyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+>(arg: {
+  _params: SyncGenerator._Params<I, Y, N, O, L, C>;
+
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function CloneData<
   //
   I extends AsyncGenerator.zInput,
@@ -53,48 +54,47 @@ export function CloneData<
   O extends AsyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
-export function CloneData(
-  _params: unknown,
-  behavior: {
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  } = {}
-):
+>(arg: {
+  _params: AsyncGenerator._Params<I, Y, N, O, L, C>;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+export function CloneData({
+  _params,
+  ...behavior
+}: {
+  _params: unknown;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}):
   | AsyncFunction.WrapperBuild
   | SyncFunction.WrapperBuild
   | AsyncGenerator.WrapperBuild
   | SyncGenerator.WrapperBuild {
-  const {type} = getParams(_params);
+  const { type } = getParams(_params);
   let Wrapper: WrapperBuild | undefined;
   if (type === "function") {
-    Wrapper = function (context, input, func) {
+    Wrapper = function ({ context, input, func, build }) {
       if (behavior.input ?? true) input = structuredClone(input);
-      let output = func(context, input);
+      let output = func({ context, input, build });
       if (behavior.output ?? true) output = structuredClone(output);
       return output;
     } satisfies SyncFunction.WrapperBuild;
   } else if (type === "async function") {
-    Wrapper = async function (context, input, func) {
+    Wrapper = async function ({ context, input, func, build }) {
       if (behavior.input ?? true) input = structuredClone(input);
-      let output = await func(context, input);
+      let output = await func({ context, input, build });
       if (behavior.output ?? true) output = structuredClone(output);
       return output;
     } satisfies AsyncFunction.WrapperBuild;
   } else if (type === "async function*") {
-    Wrapper = async function* (context, input, func) {
+    Wrapper = async function* ({ context, input, func, build }) {
       if (behavior.input ?? true) input = structuredClone(input);
-      const g = func(context, input);
+      const g = func({ context, input, build });
       let val = await g.next();
       while (!val.done) {
         let y = val.value;
@@ -108,9 +108,9 @@ export function CloneData(
       return output;
     } satisfies AsyncGenerator.WrapperBuild;
   } else if (type === "function*") {
-    Wrapper = function* (context, input, func) {
+    Wrapper = function* ({ context, input, func, build }) {
       if (behavior.input ?? true) input = structuredClone(input);
-      const g = func(context, input);
+      const g = func({ context, input, build });
       let val = g.next();
       while (!val.done) {
         let y = val.value;

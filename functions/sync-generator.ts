@@ -24,15 +24,16 @@ export type zOutput = z.ZodType;
   O extends zOutput = zOutput,
   S = any,
   C extends Context = Context
-> = (
-  context: C,
-  input: I["_output"],
-  func: (
-    context: C,
-    input: I["_output"]
-  ) => Generator<Y["_input"], O["_input"], N["_output"]>,
-  build: Build<I, Y, N, O, S, C>
-) => Generator<Y["_input"], O["_input"], N["_output"]>;
+> = (arg: {
+  context: C;
+  input: I["_output"];
+  func: (arg: {
+    context: C;
+    input: I["_output"];
+    build: Build<I, Y, N, O, S, C, any>;
+  }) => Generator<Y["_input"], O["_input"], N["_output"]>;
+  build: Build<I, Y, N, O, S, C, any>;
+}) => Generator<Y["_input"], O["_input"], N["_output"]>;
 export type Wrappers<
   I extends zInput = zInput,
   Y extends zYield = zYield,
@@ -60,11 +61,11 @@ export type Wrappers<
   output: O;
   static?: S;
   wrappers?: (_params: _Params<I, Y, N, O, S, C>) => W;
-  func?: (
-    context: C,
-    input: I["_output"],
-    build: Build<I, Y, N, O, S, C, W>
-  ) => Generator<Y["_input"], O["_input"], N["_output"]>;
+  func?: (arg: {
+    context: C;
+    input: I["_output"];
+    build: Build<I, Y, N, O, S, C, W>;
+  }) => Generator<Y["_input"], O["_input"], N["_output"]>;
   buildContext?: BuildContext<C>;
 };
 /**
@@ -100,10 +101,10 @@ export type Wrappers<
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
-> = ((
-  context: Context | string | null,
-  input: I["_input"]
-) => Generator<Y["_output"], O["_output"], N["_input"]>) &
+> = ((arg: {
+  context: Context | string | null;
+  input: I["_input"];
+}) => Generator<Y["_output"], O["_output"], N["_input"]>) &
   _Params<I, Y, N, O, S, C> & { wrappers: W };
 
 /**
@@ -125,8 +126,8 @@ export type Wrappers<
  *   static: {
  *     memo: {} as Record<number, number>,
  *   },
- *   wrappers: (params) => [
- *     FUNCTIONS.WRAPPERS.SafeParse(params, {input:true,output:false}),
+ *   wrappers: (_params) => [
+ *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
  *   *func(context, limit, build) {
  *     let n = 1;
@@ -180,14 +181,17 @@ export type Wrappers<
     static: params.static as never,
     buildContext: (params.buildContext ?? DefaultBuildContext) as never,
   };
-  const func = (context: Context | string | null, input: I["_input"]) => {
-    const c = build.buildContext(context) as C;
+  const func = (arg: {
+    context?: Context | string | null;
+    input: I["_input"];
+  }) => {
+    const context = build.buildContext(arg.context) as C;
     const fn = [...build.wrappers, null].reduceRight(
       wrap,
       params.func ?? unimplemented
     );
-    c.path.push(build.getRef());
-    return fn(c, input, build);
+    context.path.push(build.getRef());
+    return fn({ context, input: arg.input, build });
   };
   const build = Object.assign(func, _params, {
     wrappers: params.wrappers?.(_params) ?? ([] as W),

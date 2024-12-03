@@ -13,19 +13,23 @@ export function SafeParse<
   O extends AsyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncFunction._Params<I, O, L, C>,
-  behavior?: { debug?: boolean; input?: boolean; output?: boolean }
-): AsyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: AsyncFunction._Params<I, O, L, C>;
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+}): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function SafeParse<
   I extends SyncFunction.zInput,
   O extends SyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: SyncFunction._Params<I, O, L, C>,
-  behavior?: { debug?: boolean; input?: boolean; output?: boolean }
-): SyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: SyncFunction._Params<I, O, L, C>;
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+}): SyncFunction.WrapperBuild<I, O, L, C>;
 export function SafeParse<
   I extends SyncGenerator.zInput,
   Y extends SyncGenerator.zYield,
@@ -33,16 +37,14 @@ export function SafeParse<
   O extends SyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: SyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    debug?: boolean;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+>(arg: {
+  _params: SyncGenerator._Params<I, Y, N, O, L, C>;
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function SafeParse<
   I extends AsyncGenerator.zInput,
   Y extends AsyncGenerator.zYield,
@@ -50,30 +52,29 @@ export function SafeParse<
   O extends AsyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    debug?: boolean;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
-export function SafeParse(
-  _params: unknown,
-  behavior: {
-    debug?: boolean;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  } = {}
-): WrapperBuild {
+>(arg: {
+  _params: AsyncGenerator._Params<I, Y, N, O, L, C>;
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+export function SafeParse({
+  _params,
+  ...behavior
+}: {
+  _params: unknown;
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): WrapperBuild {
   const { type } = getParams(_params);
   let Wrapper: undefined | WrapperBuild;
   if (type === "function") {
-    Wrapper = function (context, input, func, build) {
+    Wrapper = function ({ context, input, func, build }) {
       if (behavior.input ?? true) {
         const start = Date.now();
         input = build.input.parse(input, {
@@ -85,7 +86,7 @@ export function SafeParse(
           );
         }
       }
-      let output = func(context, input);
+      let output = func({ context, input, build });
       if (behavior.output ?? true) {
         const start = Date.now();
         output = build.output.parse(output, {
@@ -100,7 +101,7 @@ export function SafeParse(
       return output;
     } satisfies SyncFunction.WrapperBuild;
   } else if (type === "async function") {
-    Wrapper = async function (context, input, func, build) {
+    Wrapper = async function ({ context, input, func, build }) {
       if (behavior.input ?? true) {
         const start = Date.now();
         input = build.input.parse(input, {
@@ -112,7 +113,7 @@ export function SafeParse(
           );
         }
       }
-      let output = await func(context, input);
+      let output = await func({ context, input, build });
       if (behavior.output ?? true) {
         const start = Date.now();
         output = build.output.parse(output, {
@@ -127,7 +128,7 @@ export function SafeParse(
       return output;
     } satisfies AsyncFunction.WrapperBuild;
   } else if (type === "async function*") {
-    Wrapper = async function* (context, input, func, build) {
+    Wrapper = async function* ({ context, input, func, build }) {
       if (behavior.input ?? true) {
         const start = Date.now();
         input = build.input.parse(input, {
@@ -139,7 +140,7 @@ export function SafeParse(
           );
         }
       }
-      const g = func(context, input);
+      const g = func({ context, input, build });
       let val = await g.next();
       while (!val.done) {
         let y = val.value;
@@ -179,7 +180,7 @@ export function SafeParse(
       return output;
     } satisfies AsyncGenerator.WrapperBuild;
   } else if (type === "function*") {
-    Wrapper = function* (context, input, func, build) {
+    Wrapper = function* ({ context, input, func, build }) {
       if (behavior.input ?? true) {
         const start = Date.now();
         input = build.input.parse(input, {
@@ -191,7 +192,7 @@ export function SafeParse(
           );
         }
       }
-      const g = func(context, input);
+      const g = func({ context, input, build });
       let val = g.next();
       while (!val.done) {
         let y = val.value;

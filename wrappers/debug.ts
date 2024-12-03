@@ -14,20 +14,24 @@ export function Debug<
   O extends AsyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncFunction._Params<I, O, L, C>,
-  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean }
-): AsyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: AsyncFunction._Params<I, O, L, C>;
+  maxTimeAllowed?: number;
+  input?: boolean;
+  output?: boolean;
+}): AsyncFunction.WrapperBuild<I, O, L, C>;
 export function Debug<
   //
   I extends SyncFunction.zInput,
   O extends SyncFunction.zOutput,
   L,
   C extends Context
->(
-  _params: SyncFunction._Params<I, O, L, C>,
-  behavior?: { maxTimeAllowed?: number; input?: boolean; output?: boolean }
-): SyncFunction.WrapperBuild<I, O, L, C>;
+>(arg: {
+  _params: SyncFunction._Params<I, O, L, C>;
+  maxTimeAllowed?: number;
+  input?: boolean;
+  output?: boolean;
+}): SyncFunction.WrapperBuild<I, O, L, C>;
 export function Debug<
   //
   I extends SyncGenerator.zInput,
@@ -36,16 +40,14 @@ export function Debug<
   O extends SyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: SyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    maxTimeAllowed?: number;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+>(arg: {
+  _params: SyncGenerator._Params<I, Y, N, O, L, C>;
+  maxTimeAllowed?: number;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
 export function Debug<
   //
   I extends AsyncGenerator.zInput,
@@ -54,34 +56,33 @@ export function Debug<
   O extends AsyncGenerator.zOutput,
   L,
   C extends Context
->(
-  _params: AsyncGenerator._Params<I, Y, N, O, L, C>,
-  behavior?: {
-    maxTimeAllowed?: number;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  }
-): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
-export function Debug(
-  _params: unknown,
-  behavior: {
-    maxTimeAllowed?: number;
-    input?: boolean;
-    output?: boolean;
-    yield?: boolean;
-    next?: boolean;
-  } = {}
-): WrapperBuild {
+>(arg: {
+  _params: AsyncGenerator._Params<I, Y, N, O, L, C>;
+  maxTimeAllowed?: number;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+export function Debug({
+  _params,
+  ...behavior
+}: {
+  _params: unknown;
+  maxTimeAllowed?: number;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+}): WrapperBuild {
   const { type } = getParams(_params);
   let Wrapper: WrapperBuild | undefined;
   if (type === "function") {
-    Wrapper = function (context, input, func, build) {
+    Wrapper = function ({ context, input, func, build }) {
       const start = Date.now();
       try {
         if (behavior.input) context.log(build.getRef(), "input", input);
-        const output = func(context, input);
+        const output = func({ context, input, build });
         if (behavior.output) context.log(build.getRef(), "output", output);
         return output;
       } finally {
@@ -98,11 +99,11 @@ export function Debug(
       }
     } satisfies SyncFunction.WrapperBuild;
   } else if (type === "async function") {
-    Wrapper = async function (context, input, func, build) {
+    Wrapper = async function ({ context, input, func, build }) {
       const start = Date.now();
       try {
         if (behavior.input) context.log("input", input);
-        const output = await func(context, input);
+        const output = await func({ context, input, build });
         if (behavior.output) context.log("output", output);
         return output;
       } finally {
@@ -119,11 +120,11 @@ export function Debug(
       }
     } satisfies AsyncFunction.WrapperBuild;
   } else if (type === "async function*") {
-    Wrapper = async function* (context, input, func, build) {
+    Wrapper = async function* ({ context, input, func, build }) {
       const start = Date.now();
       try {
         if (behavior.input) context.log(build.getRef(), "input", input);
-        const g = func(context, input);
+        const g = func({ context, input, build });
         let val = await g.next();
         let i = 0;
         while (!val.done) {
@@ -154,11 +155,11 @@ export function Debug(
       }
     } satisfies AsyncGenerator.WrapperBuild;
   } else if (type === "function*") {
-    Wrapper = function* (context, input, func, build) {
+    Wrapper = function* ({ context, input, func, build }) {
       const start = Date.now();
       try {
         if (behavior.input) context.log(build.getRef(), "input", input);
-        const g = func(context, input);
+        const g = func({ context, input, build });
         let val = g.next();
         let i = 0;
         while (!val.done) {

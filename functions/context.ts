@@ -10,7 +10,7 @@ export type Context = {
 };
 
 export type BuildContext<C extends Context> = (
-  context: Context | string | null
+  context?: Context | string | null
 ) => C;
 
 type OnCreateInitFn = (context: Context) => void;

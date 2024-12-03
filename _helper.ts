@@ -5,30 +5,26 @@ import type * as SyncGenerator from "./functions/sync-generator.ts";
 import type * as AsyncGenerator from "./functions/async-generator.ts";
 
 export function wrap<C extends Context, I, R, B>(
-  func: (context: C, input: I, build: B) => R,
+  func: (arg: { context: C; input: I; build: B }) => R,
   wrapper:
     | null
-    | ((context: C, input: I, func: (context: C, input: I) => R, build: B) => R),
-): (context: C, input: I, build: B) => R {
+    | ((arg: {
+        context: C;
+        input: I;
+        func: (arg: { context: C; input: I; build: B }) => R;
+        build: B;
+      }) => R)
+): (arg: { context: C; input: I; build: B }) => R {
   if (wrapper) {
-    return (context, input, build) =>
-      wrapper(
-        context,
-        input,
-        (context, input) => func(context, input, build),
-        build,
-      );
+    return ({ context, input, build }) =>
+      wrapper({ context, input, func, build });
   }
-  return (context, input, build) => func(context, input, build);
+  return func;
 }
 
-export function unimplemented<C extends Context, I, R, B>(
-  _context: C,
-  _input: I,
-  _build: B,
-): R {
+export const unimplemented = (() => {
   throw new Error("Unimplemented");
-}
+}) as never;
 
 export function getParams(params: unknown) {
   if (typeof params !== "object" || !params || "type" in params == false) {

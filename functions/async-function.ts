@@ -19,12 +19,16 @@ export type zOutput = z.ZodType;
   O extends zOutput = zOutput,
   S = any,
   C extends Context = Context
-> = (
-  context: C,
-  input: I["_output"],
-  func: (context: C, input: I["_output"]) => Promise<O["_input"]>,
-  build: Build<I, O, S, C>
-) => Promise<O["_input"]>;
+> = (arg: {
+  context: C;
+  input: I["_output"];
+  func: (arg: {
+    context: C;
+    input: I["_output"];
+    build: Build<I, O, S, C, any>;
+  }) => Promise<O["_input"]>;
+  build: Build<I, O, S, C, any>;
+}) => Promise<O["_input"]>;
 export type Wrappers<
   I extends zInput = zInput,
   O extends zOutput = zOutput,
@@ -46,11 +50,11 @@ export type Wrappers<
   output: O;
   static?: S;
   wrappers?: (_params: _Params<I, O, S, C>) => W;
-  func?: (
-    context: C,
-    input: I["_output"],
-    build: Build<I, O, S, C, W>
-  ) => Promise<O["_input"]>;
+  func?: (arg: {
+    context: C;
+    input: I["_output"];
+    build: Build<I, O, S, C, W>;
+  }) => Promise<O["_input"]>;
   buildContext?: BuildContext<C>;
 };
 /**
@@ -80,10 +84,10 @@ export type Wrappers<
   S = any,
   C extends Context = Context,
   W extends Wrappers<I, O, S, C> = Wrappers<I, O, S, C>
-> = ((
-  context: Context | string | null,
-  input: I["_input"]
-) => Promise<O["_output"]>) &
+> = ((arg: {
+  context?: Context | string | null;
+  input: I["_input"];
+}) => Promise<O["_output"]>) &
   _Params<I, O, S, C> & { wrappers: W };
 
 /**
@@ -103,8 +107,8 @@ export type Wrappers<
  *   static: {
  *     query: `SELECT * FROM users WHERE id = ? LIMIT 1`
  *   },
- *   wrappers: (params) => [
- *     FUNCTIONS.WRAPPERS.SafeParse(params, {input:true,output:false}),
+ *   wrappers: (_params) => [
+ *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
  *   async func(context, {userId}, build) {
  *     const results = await db.query(build.static.query, [userId]);
@@ -142,14 +146,20 @@ export type Wrappers<
     static: params.static as never,
     buildContext: (params.buildContext ?? DefaultBuildContext) as never,
   };
-  const func = (context: Context | string | null, input: I["_input"]) => {
+  const func = ({
+    input,
+    context,
+  }: {
+    context?: Context | string | null;
+    input: I["_input"];
+  }) => {
     const c = build.buildContext(context) as C;
     const fn = [...build.wrappers, null].reduceRight(
       wrap,
       params.func ?? unimplemented
     );
     c.path.push(build.getRef());
-    return fn(c, input, build);
+    return fn({ context: c, input, build });
   };
   const build = Object.assign(func, _params, {
     wrappers: params.wrappers?.(_params) ?? ([] as W),
