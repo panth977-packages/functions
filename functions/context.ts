@@ -6,7 +6,6 @@ export type Context = {
   onDispose: (exe: () => void) => void;
   dispose: () => Promise<void>;
   path: string[];
-  getStack(): string | undefined;
   getState<T>(arg: { key: symbol; _type: T }): T;
   setState<T>(arg: { key: symbol; val?: T; cascade?: boolean }): void;
   state: Record<symbol, unknown>;
@@ -72,9 +71,6 @@ export const DefaultBuildContext: BuildContext<Context> = function (_context) {
     },
     state: {},
     cascadedState: {},
-    getStack() {
-      return this.path.map((x) => "\n\t-->> " + x).join("");
-    },
     setState({ key, val, cascade }) {
       if (cascade) {
         this.cascadedState[key] = val;

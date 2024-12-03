@@ -94,7 +94,7 @@ export function Debug({
           behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
             ? "⚠ throttle"
             : "",
-          context.getStack()
+          context.path.map((x) => "\n\t-->> " + x).join("")
         );
       }
     } satisfies SyncFunction.WrapperBuild;
@@ -115,7 +115,7 @@ export function Debug({
           behavior.maxTimeAllowed && behavior.maxTimeAllowed < timeTaken
             ? "⚠ throttle"
             : "",
-          context.getStack()
+          context.path.map((x) => "\n\t-->> " + x).join("")
         );
       }
     } satisfies AsyncFunction.WrapperBuild;
@@ -150,7 +150,7 @@ export function Debug({
           build.getRef(),
           "⏳ Time",
           Date.now() - start,
-          context.getStack()
+          context.path.map((x) => "\n\t-->> " + x).join("")
         );
       }
     } satisfies AsyncGenerator.WrapperBuild;
@@ -186,7 +186,7 @@ export function Debug({
           build.getRef(),
           "⏳ Time",
           Date.now() - start,
-          context.getStack()
+          context.path.map((x) => "\n\t-->> " + x).join("")
         );
       }
     } satisfies SyncGenerator.WrapperBuild;
