@@ -1,16 +1,31 @@
 import { randomUUID } from "crypto";
 
+export type ContextStateKey<T> = { key: symbol; _type: T; local?: boolean };
+export type ContextState = Record<symbol, unknown>;
 export type Context = {
   id: string;
   log(...args: unknown[]): void;
   onDispose: (exe: () => void) => void;
   dispose: () => Promise<void>;
   path: string[];
-  getState<T>(arg: { key: symbol; _type: T }): T;
-  setState<T>(arg: { key: symbol; val?: T; cascade?: boolean }): void;
-  state: Record<symbol, unknown>;
-  cascadedState: Record<symbol, unknown>;
+  useState<T>(arg: ContextStateKey<T>): {
+    state: ContextState;
+    get(): T;
+    set(val: T | undefined): void;
+  };
+  localState: ContextState;
+  globalState: ContextState;
 };
+
+export function CreateContextStateKey<T>({
+  label,
+  local,
+}: {
+  label: string;
+  local?: boolean;
+}): ContextStateKey<T> {
+  return { _type: {} as T, key: Symbol(label), local };
+}
 
 export type BuildContext<C extends Context> = (
   context?: Context | string | null
@@ -69,23 +84,22 @@ export const DefaultBuildContext: BuildContext<Context> = function (_context) {
         ...[...onDisposeExes].map((exe) => exe(this)),
       ]);
     },
-    state: {},
-    cascadedState: {},
-    setState({ key, val, cascade }) {
-      if (cascade) {
-        this.cascadedState[key] = val;
-      } else {
-        this.state[key] = val;
-      }
-    },
-    getState({ key }) {
-      if (key in this.state) {
-        return this.state[key] as any;
-      }
-      if (key in this.cascadedState) {
-        return this.cascadedState[key] as any;
-      }
-      throw new Error('State was never declared!');
+    localState: {},
+    globalState: {},
+    useState({ key, local }) {
+      return {
+        state: local ? this.localState : this.globalState,
+        get() {
+          return this.state[key] as any;
+        },
+        set(val) {
+          if (val === undefined) {
+            delete this.state[key];
+          } else {
+            this.state[key] = val;
+          }
+        },
+      };
     },
   };
   Promise.allSettled([...[...onCreateInitFn].map((fn) => fn(context))]);
