@@ -4,7 +4,12 @@
  */
 import { z } from "zod";
 import { type BuildContext, type Context, DefaultContext } from "./context.ts";
-import { unimplemented, wrap, type inferArguments } from "../_helper.ts";
+import {
+  unimplemented,
+  wrap,
+  type extendObject,
+  type inferArguments,
+} from "../_helper.ts";
 
 export type zInput = z.ZodType;
 export type zOutput = z.ZodType;
@@ -61,17 +66,20 @@ export type Wrappers<
   O extends zOutput = zOutput,
   S extends Record<never, never> = Record<never, never>,
   C extends Context = Context
-> = {
-  getNamespace(): string;
-  setNamespace(namespace: string): void;
-  getName(): string;
-  setName(name: string): void;
-  getRef(): string;
-  input: I;
-  output: O;
-  type: "function";
-  buildContext: BuildContext<C extends unknown ? Context : C>;
-} & S;
+> = extendObject<
+  S,
+  {
+    getNamespace(): string;
+    setNamespace(namespace: string): void;
+    getName(): string;
+    setName(name: string): void;
+    getRef(): string;
+    input: I;
+    output: O;
+    type: "function";
+    buildContext: BuildContext<C extends unknown ? Context : C>;
+  }
+>;
 /**
  * Build Type, Output of the Sync Function builder
  */ export type Build<
@@ -127,27 +135,27 @@ export type Wrappers<
   static: others,
 }: Params<I, O, S, C, W>): Build<I, O, S, C, W> {
   const _params: _Params<I, O, S, C> = {
+    ...(others ?? ({})),
     getNamespace() {
       return `${_namespace}`;
     },
-    setNamespace(namespace) {
+    setNamespace(namespace: string) {
       _namespace = namespace;
     },
     getName() {
       return `${_name}`;
     },
-    setName(name) {
+    setName(name: string) {
       _name = name;
     },
     getRef() {
       return `${_namespace}.${_name}`;
     },
     type: "function",
-    input: (_input ?? z.any()) as never,
-    output: (_output ?? z.any()) as never,
-    buildContext: (buildContext ?? DefaultContext.Builder) as never,
-    ...(others ?? ({} as never)),
-  };
+    input: (_input ?? z.any()),
+    output: (_output ?? z.any()),
+    buildContext: (buildContext ?? DefaultContext.Builder),
+  } as never;
   const func = ({ input, context }: inferArguments<I>) => {
     const c = build.buildContext.fromParent(context, build.getRef()) as C;
     const fn = [...build.wrappers, null].reduceRight(
