@@ -2,7 +2,7 @@
  * Async Generator builder
  * @module
  */
-import type { z } from "zod";
+import { z } from "zod";
 import { type BuildContext, type Context, DefaultContext } from "./context.ts";
 import { unimplemented, wrap, type inferArguments } from "../_helper.ts";
 
@@ -179,10 +179,10 @@ export type Wrappers<
       return `${_namespace}.${_name}`;
     },
     type: "async function*",
-    input: _input as never,
-    output: _output as never,
-    next: _next as never,
-    yield: _yield as never,
+    input: (_input ?? z.any()) as never,
+    output: (_output ?? z.any()) as never,
+    next: (_next ?? z.any()) as never,
+    yield: (_yield ?? z.any()) as never,
     buildContext: (buildContext ?? DefaultContext.Builder) as never,
     ...(others as S)
   };
