@@ -52,7 +52,8 @@ export type Wrappers<
     build: Build<I, O, S, C, W>;
   }) => O["_input"];
   buildContext?: BuildContext<C>;
-} & S;
+  static?: S;
+};
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
@@ -123,7 +124,7 @@ export type Wrappers<
   name: _name,
   namespace: _namespace,
   wrappers,
-  ...others
+  static: others,
 }: Params<I, O, S, C, W>): Build<I, O, S, C, W> {
   const _params: _Params<I, O, S, C> = {
     getNamespace() {
@@ -145,7 +146,7 @@ export type Wrappers<
     input: (_input ?? z.any()) as never,
     output: (_output ?? z.any()) as never,
     buildContext: (buildContext ?? DefaultContext.Builder) as never,
-    ...(others as S),
+    ...(others ?? ({} as never)),
   };
   const func = ({ input, context }: inferArguments<I>) => {
     const c = build.buildContext.fromParent(context, build.getRef()) as C;

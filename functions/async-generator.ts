@@ -62,7 +62,8 @@ export type Wrappers<
     build: Build<I, Y, N, O, S, C, W>;
   }) => AsyncGenerator<Y["_input"], O["_input"], N["_output"]>;
   buildContext?: BuildContext<C>;
-} & S;
+  static?: S;
+};
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
@@ -160,7 +161,7 @@ export type Wrappers<
   next: _next,
   output: _output,
   wrappers,
-  ...others
+  static: others
 }: Params<I, Y, N, O, S, C, W>): Build<I, Y, N, O, S, C, W> {
   const _params: _Params<I, Y, N, O, S, C> = {
     getNamespace() {
@@ -184,7 +185,7 @@ export type Wrappers<
     next: (_next ?? z.any()) as never,
     yield: (_yield ?? z.any()) as never,
     buildContext: (buildContext ?? DefaultContext.Builder) as never,
-    ...(others as S)
+    ...(others ?? {} as never),
   };
   const func = ({ input, context }: inferArguments<I>) => {
     const c = build.buildContext.fromParent(context, build.getRef()) as C;
