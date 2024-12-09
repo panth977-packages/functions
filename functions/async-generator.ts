@@ -92,6 +92,7 @@ export type Wrappers<
     output: O;
     type: "async function*";
     buildContext: BuildContext<C extends unknown ? Context : C>;
+    wrappers: unknown
   }
 >;
 /**

@@ -78,6 +78,7 @@ export type Wrappers<
     output: O;
     type: "function";
     buildContext: BuildContext<C extends unknown ? Context : C>;
+    wrappers: unknown
   }
 >;
 /**
