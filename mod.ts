@@ -11,6 +11,14 @@
  * - {@link FUNCTIONS.WRAPPERS.MemoData}
  * - {@link FUNCTIONS.WRAPPERS.SafeParse}
  * 
+ * # Context
+ * - {@link FUNCTIONS.DefaultContext}
+ * - {@link FUNCTIONS.DefaultContext.onLog}
+ * - {@link FUNCTIONS.DefaultContext.onCreate}
+ * - {@link FUNCTIONS.DefaultContext.onDispose}
+ * - {@link FUNCTIONS.DefaultContextState}
+ * - {@link FUNCTIONS.DefaultContextState.CreateKey}
+ * 
  * @module
  * 
  * @example
@@ -21,4 +29,7 @@
  * ```
  */
 
+import { WRAPPERS } from "./exports.ts";
+
 export * as FUNCTIONS from "./exports.ts";
+WRAPPERS.CloneData

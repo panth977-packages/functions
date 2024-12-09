@@ -12,55 +12,55 @@ export function CloneData<
   //
   I extends AsyncFunction.zInput,
   O extends AsyncFunction.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: AsyncFunction._Params<I, O, L, C>;
+  _params: AsyncFunction._Params<I, O, S, C>;
   input?: boolean;
   output?: boolean;
-}): AsyncFunction.WrapperBuild<I, O, L, C>;
+}): AsyncFunction.WrapperBuild<I, O, S, C>;
 export function CloneData<
   //
   I extends SyncFunction.zInput,
   O extends SyncFunction.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: SyncFunction._Params<I, O, L, C>;
+  _params: SyncFunction._Params<I, O, S, C>;
   input?: boolean;
   output?: boolean;
-}): SyncFunction.WrapperBuild<I, O, L, C>;
+}): SyncFunction.WrapperBuild<I, O, S, C>;
 export function CloneData<
   //
   I extends SyncGenerator.zInput,
   Y extends SyncGenerator.zYield,
   N extends SyncGenerator.zNext,
   O extends SyncGenerator.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: SyncGenerator._Params<I, Y, N, O, L, C>;
+  _params: SyncGenerator._Params<I, Y, N, O, S, C>;
 
   input?: boolean;
   output?: boolean;
   yield?: boolean;
   next?: boolean;
-}): SyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+}): SyncGenerator.WrapperBuild<I, Y, N, O, S, C>;
 export function CloneData<
   //
   I extends AsyncGenerator.zInput,
   Y extends AsyncGenerator.zYield,
   N extends AsyncGenerator.zNext,
   O extends AsyncGenerator.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: AsyncGenerator._Params<I, Y, N, O, L, C>;
+  _params: AsyncGenerator._Params<I, Y, N, O, S, C>;
   input?: boolean;
   output?: boolean;
   yield?: boolean;
   next?: boolean;
-}): AsyncGenerator.WrapperBuild<I, Y, N, O, L, C>;
+}): AsyncGenerator.WrapperBuild<I, Y, N, O, S, C>;
 export function CloneData({
   _params,
   ...behavior

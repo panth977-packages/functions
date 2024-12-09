@@ -9,23 +9,23 @@ import { assign } from "./_helper.ts";
 export function MemoData<
   I extends AsyncFunction.zInput,
   O extends AsyncFunction.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: AsyncFunction._Params<I, O, L, C>;
+  _params: AsyncFunction._Params<I, O, S, C>;
   getKey(input: I["_output"]): string | null;
   expSec: number;
-}): AsyncFunction.WrapperBuild<I, O, L, C>;
+}): AsyncFunction.WrapperBuild<I, O, S, C>;
 export function MemoData<
   I extends SyncFunction.zInput,
   O extends SyncFunction.zOutput,
-  L,
+  S extends Record<never, never>,
   C extends Context
 >(arg: {
-  _params: SyncFunction._Params<I, O, L, C>;
+  _params: SyncFunction._Params<I, O, S, C>;
   getKey(input: I["_output"]): string | null;
   expSec: number;
-}): SyncFunction.WrapperBuild<I, O, L, C>;
+}): SyncFunction.WrapperBuild<I, O, S, C>;
 export function MemoData({
   _params,
   ...behavior

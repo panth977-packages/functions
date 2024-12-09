@@ -3,6 +3,7 @@ import type * as AsyncFunction from "./functions/async-function.ts";
 import type * as SyncFunction from "./functions/sync-function.ts";
 import type * as SyncGenerator from "./functions/sync-generator.ts";
 import type * as AsyncGenerator from "./functions/async-generator.ts";
+import type { z } from "zod";
 
 export function wrap<C extends Context, I, R, B>(
   func: (arg: { context: C; input: I; build: B }) => R,
@@ -54,3 +55,9 @@ export type WrapperBuild =
   | AsyncGenerator.WrapperBuild
   | SyncFunction.WrapperBuild
   | SyncGenerator.WrapperBuild;
+
+export type inferArguments<I extends z.ZodType> = {
+  context: Context;
+} & (I["_input"] extends undefined
+  ? { input?: I["_input"] }
+  : { input: I["_input"] });

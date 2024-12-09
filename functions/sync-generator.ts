@@ -3,12 +3,8 @@
  * @module
  */
 import type { z } from "zod";
-import {
-  type BuildContext,
-  type Context,
-  DefaultBuildContext,
-} from "./context.ts";
-import { unimplemented, wrap } from "../_helper.ts";
+import { type BuildContext, type Context, DefaultContext } from "./context.ts";
+import { unimplemented, wrap, type inferArguments } from "../_helper.ts";
 
 export type zInput = z.ZodType;
 export type zYield = z.ZodType;
@@ -22,7 +18,7 @@ export type zOutput = z.ZodType;
   Y extends zYield = zYield,
   N extends zNext = zNext,
   O extends zOutput = zOutput,
-  S = any,
+  S extends Record<never, never> = Record<never, never>,
   C extends Context = Context
 > = (arg: {
   context: C;
@@ -39,7 +35,7 @@ export type Wrappers<
   Y extends zYield = zYield,
   N extends zNext = zNext,
   O extends zOutput = zOutput,
-  S = any,
+  S extends Record<never, never> = Record<never, never>,
   C extends Context = Context
 > = [] | [WrapperBuild<I, Y, N, O, S, C>, ...WrapperBuild<I, Y, N, O, S, C>[]];
 /**
@@ -49,17 +45,16 @@ export type Wrappers<
   Y extends zYield = zYield,
   N extends zNext = zNext,
   O extends zOutput = zOutput,
-  S = any,
+  S extends Record<never, never> = Record<never, never>,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
 > = {
   namespace?: string;
   name?: string;
-  input: I;
-  yield: Y;
-  next: N;
-  output: O;
-  static?: S;
+  input?: I;
+  yield?: Y;
+  next?: N;
+  output?: O;
   wrappers?: (_params: _Params<I, Y, N, O, S, C>) => W;
   func?: (arg: {
     context: C;
@@ -67,7 +62,7 @@ export type Wrappers<
     build: Build<I, Y, N, O, S, C, W>;
   }) => Generator<Y["_input"], O["_input"], N["_output"]>;
   buildContext?: BuildContext<C>;
-};
+} & S;
 /**
  * Params used for wrappers for type safe compatibility
  */ export type _Params<
@@ -75,7 +70,7 @@ export type Wrappers<
   Y extends zYield = zYield,
   N extends zNext = zNext,
   O extends zOutput = zOutput,
-  S = any,
+  S extends Record<never, never> = Record<never, never>,
   C extends Context = Context
 > = {
   getNamespace(): string;
@@ -87,10 +82,9 @@ export type Wrappers<
   yield: Y;
   next: N;
   output: O;
-  static: undefined extends S ? undefined : S;
   type: "function*";
   buildContext: BuildContext<C extends unknown ? Context : C>;
-};
+} & S;
 /**
  * Build Type, Output of the Sync Generator builder
  */ export type Build<
@@ -98,13 +92,12 @@ export type Wrappers<
   Y extends zYield = zYield,
   N extends zNext = zNext,
   O extends zOutput = zOutput,
-  S = any,
+  S extends Record<never, never> = Record<never, never>,
   C extends Context = Context,
   W extends Wrappers<I, Y, N, O, S, C> = Wrappers<I, Y, N, O, S, C>
-> = ((arg: {
-  context: Context | string | null;
-  input: I["_input"];
-}) => Generator<Y["_output"], O["_output"], N["_input"]>) &
+> = ((
+  arg: inferArguments<I>
+) => Generator<Y["_output"], O["_output"], N["_input"]>) &
   _Params<I, Y, N, O, S, C> & { wrappers: W };
 
 /**
@@ -123,9 +116,7 @@ export type Wrappers<
  *   yield: z.number().array(),
  *   next: z.number().int().gt(0).or(z.void()).optional(),
  *   output: z.void(),
- *   static: {
- *     memo: {} as Record<number, number>,
- *   },
+ *   memo: {} as Record<number, number>,
  *   wrappers: (_params) => [
  *     FUNCTIONS.WRAPPERS.SafeParse({_params, input:true, output:false}),
  *   ],
@@ -137,7 +128,7 @@ export type Wrappers<
  *         if (n <= 2) {
  *           fibs.push(1);
  *         } else {
- *           fibs.push((build.static.memo[n] ??= build.static.memo[n - 1] + build.static.memo[n - 2]));
+ *           fibs.push((build.memo[n] ??= build.memo[n - 1] + build.memo[n - 2]));
  *         }
  *         n++;
  *       }
@@ -153,48 +144,55 @@ export type Wrappers<
   Y extends zYield,
   N extends zNext,
   O extends zOutput,
-  S,
+  S extends Record<never, never>,
   C extends Context,
   W extends Wrappers<I, Y, N, O, S, C>
->(params: Params<I, Y, N, O, S, C, W>): Build<I, Y, N, O, S, C, W> {
+>({
+  buildContext,
+  func: _func,
+  name: _name,
+  namespace: _namespace,
+  input: _input,
+  yield: _yield,
+  next: _next,
+  output: _output,
+  wrappers,
+  ...others
+}: Params<I, Y, N, O, S, C, W>): Build<I, Y, N, O, S, C, W> {
   const _params: _Params<I, Y, N, O, S, C> = {
     getNamespace() {
-      return `${params.namespace}`;
+      return `${_namespace}`;
     },
     setNamespace(namespace) {
-      params.namespace = namespace;
+      _namespace = namespace;
     },
     getName() {
-      return `${params.name}`;
+      return `${_name}`;
     },
     setName(name) {
-      params.name = name;
+      _name = name;
     },
     getRef() {
-      return `${params.namespace}.${params.name}`;
+      return `${_namespace}.${_name}`;
     },
-    input: params.input,
-    output: params.output,
     type: "function*",
-    next: params.next,
-    yield: params.yield,
-    static: params.static as never,
-    buildContext: (params.buildContext ?? DefaultBuildContext) as never,
+    input: _input as never,
+    output: _output as never,
+    next: _next as never,
+    yield: _yield as never,
+    buildContext: (buildContext ?? DefaultContext.Builder) as never,
+    ...(others as S),
   };
-  const func = (arg: {
-    context?: Context | string | null;
-    input: I["_input"];
-  }) => {
-    const context = build.buildContext(arg.context) as C;
+  const func = ({ input, context }: inferArguments<I>) => {
+    const c = build.buildContext.fromParent(context, build.getRef()) as C;
     const fn = [...build.wrappers, null].reduceRight(
       wrap,
-      params.func ?? unimplemented
+      _func ?? unimplemented
     );
-    context.path.push(build.getRef());
-    return fn({ context, input: arg.input, build });
+    return fn({ context: c, input, build });
   };
   const build = Object.assign(func, _params, {
-    wrappers: params.wrappers?.(_params) ?? ([] as W),
+    wrappers: wrappers?.(_params) ?? ([] as W),
   });
   return build;
 }
