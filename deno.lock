@@ -1,8 +1,14 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:crypto@^1.0.1": "1.0.1",
+    "jsr:@panth977/tools@~0.2.6": "0.2.6",
+    "npm:crypto@1": "1.0.1",
     "npm:zod@^3.23.0": "3.23.8"
+  },
+  "jsr": {
+    "@panth977/tools@0.2.6": {
+      "integrity": "a4c96137ccdd7e6cb4133eb393cb86a93424a4a6fcc09fe6d4e7fca1b2358923"
+    }
   },
   "npm": {
     "crypto@1.0.1": {
@@ -14,7 +20,8 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:crypto@^1.0.1",
+      "jsr:@panth977/tools@~0.2.6",
+      "npm:crypto@1",
       "npm:zod@^3.23.0"
     ]
   }

@@ -1,6 +1,6 @@
 {
   "name": "@panth977/functions",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "exports": "./mod.ts",
   "license": "MIT",
   "tasks": {
@@ -12,7 +12,7 @@
       "exclude": ["no-explicit-any"]
     }
   },
-  "imports": { "crypto": "npm:crypto@^1.0.x", "zod": "npm:zod@^3.23.x" },
+  "imports": { "@panth977/tools": "jsr:@panth977/tools@^0.2.x", "crypto": "npm:crypto@^1.0.x", "zod": "npm:zod@^3.23.x" },
   "fmt": {
     "lineWidth": 150
   }
