@@ -20,7 +20,7 @@ function debugTime(
     if (then) {
       delete record[label];
       const ts = Date.now() - then;
-      context.log("[DEBUG]", ref, label, ts / 1000, "sec");
+      context.log("[DEBUG]", `(${ts / 1000} sec)`, label, ref);
     } else {
       record[label] = Date.now();
     }
