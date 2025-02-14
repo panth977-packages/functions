@@ -8,6 +8,25 @@ import type {
 import { getParams, type WrapperBuild } from "../_helper.ts";
 import { assign, is } from "./_helper.ts";
 
+function debugTime(
+  context: Context,
+  ref: string,
+  log: boolean
+): (label: string) => void {
+  if (!log) return function () {};
+  const record: Record<string, number> = {};
+  return function (label) {
+    const then = record[label];
+    if (then) {
+      delete record[label];
+      const ts = Date.now() - then;
+      context.log("[DEBUG]", ref, label, ts / 1000, "sec");
+    } else {
+      record[label] = Date.now();
+    }
+  };
+}
+
 export function SafeParse<
   I extends AsyncFunction.zInput,
   O extends AsyncFunction.zOutput,
@@ -75,159 +94,131 @@ export function SafeParse({
   let Wrapper: undefined | WrapperBuild;
   if (type === "function") {
     Wrapper = function ({ context, input, func, build }) {
+      const timer = debugTime(context, build.getRef(), behavior.debug ?? false);
       if (behavior.input ?? true) {
-        const start = Date.now();
+        timer("input:parser");
         input = build.input.parse(input, {
           path: [build.getRef() + ":input"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:input parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("input:parser");
       }
+      timer("func:process");
       let output = func({ context, input, build });
+      timer("func:process");
       if (behavior.output ?? true) {
-        const start = Date.now();
+        timer("output:parser");
         output = build.output.parse(output, {
           path: [build.getRef() + ":output"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:output parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("output:parser");
       }
       return output;
     } satisfies SyncFunction.WrapperBuild;
   } else if (type === "async function") {
     Wrapper = async function ({ context, input, func, build }) {
+      const timer = debugTime(context, build.getRef(), behavior.debug ?? false);
       if (behavior.input ?? true) {
-        const start = Date.now();
+        timer("input:parser");
         input = build.input.parse(input, {
           path: [build.getRef() + ":input"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:input parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("input:parser");
       }
+      timer("func:process");
       let output = await func({ context, input, build });
+      timer("func:process");
       if (behavior.output ?? true) {
-        const start = Date.now();
+        timer("output:parser");
         output = build.output.parse(output, {
           path: [build.getRef() + ":output"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:output parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("output:parser");
       }
       return output;
     } satisfies AsyncFunction.WrapperBuild;
   } else if (type === "async function*") {
     Wrapper = async function* ({ context, input, func, build }) {
+      const timer = debugTime(context, build.getRef(), behavior.debug ?? false);
       if (behavior.input ?? true) {
-        const start = Date.now();
+        timer("input:parser");
         input = build.input.parse(input, {
           path: [build.getRef() + ":input"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:input parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("input:parser");
       }
+      timer("func:process");
+      timer("func:init");
       const g = func({ context, input, build });
       let val = await g.next();
+      timer("func:init");
       while (!val.done) {
         let y = val.value;
         if (behavior.yield ?? true) {
-          const start = Date.now();
+          timer("yield:parser");
           y = build.yield.parse(y, { path: [build.getRef() + ":yield"] });
-          if (behavior.debug) {
-            context.log(
-              `${build.getRef()}:yield parsed in ${Date.now() - start} ms`
-            );
-          }
+          timer("yield:parser");
         }
         let next = yield y;
         if (behavior.next ?? true) {
-          const start = Date.now();
+          timer("next:parser");
           next = build.next.parse(next, { path: [build.getRef() + ":next"] });
-          if (behavior.debug) {
-            context.log(
-              `${build.getRef()}:next parsed in ${Date.now() - start} ms`
-            );
-          }
+          timer("next:parser");
         }
+        timer("func:next");
         val = await g.next(next);
+        timer("func:next");
       }
       let output = val.value;
+      timer("func:process");
       if (behavior.output ?? true) {
-        const start = Date.now();
+        timer("output:parser");
         output = build.output.parse(output, {
           path: [build.getRef() + ":output"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:output parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("output:parser");
       }
       return output;
     } satisfies AsyncGenerator.WrapperBuild;
   } else if (type === "function*") {
     Wrapper = function* ({ context, input, func, build }) {
+      const timer = debugTime(context, build.getRef(), behavior.debug ?? false);
       if (behavior.input ?? true) {
-        const start = Date.now();
+        timer("input:parser");
         input = build.input.parse(input, {
           path: [build.getRef() + ":input"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:input parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("input:parser");
       }
+      timer("func:process");
+      timer("func:init");
       const g = func({ context, input, build });
       let val = g.next();
+      timer("func:init");
       while (!val.done) {
         let y = val.value;
         if (behavior.yield ?? true) {
-          const start = Date.now();
+          timer("yield:parser");
           y = build.yield.parse(y, { path: [build.getRef() + ":yield"] });
-          if (behavior.debug) {
-            context.log(
-              `${build.getRef()}:yield parsed in ${Date.now() - start} ms`
-            );
-          }
+          timer("yield:parser");
         }
         let next = yield y;
         if (behavior.next ?? true) {
-          const start = Date.now();
+          timer("next:parser");
           next = build.next.parse(next, { path: [build.getRef() + ":next"] });
-          if (behavior.debug) {
-            context.log(
-              `${build.getRef()}:next parsed in ${Date.now() - start} ms`
-            );
-          }
+          timer("next:parser");
         }
+        timer("func:next");
         val = g.next(next);
+        timer("func:next");
       }
       let output = val.value;
+      timer("func:process");
       if (behavior.output ?? true) {
-        const start = Date.now();
+        timer("output:parser");
         output = build.output.parse(output, {
           path: [build.getRef() + ":output"],
         });
-        if (behavior.debug) {
-          context.log(
-            `${build.getRef()}:output parsed in ${Date.now() - start} ms`
-          );
-        }
+        timer("output:parser");
       }
       return output;
     } satisfies SyncGenerator.WrapperBuild;
