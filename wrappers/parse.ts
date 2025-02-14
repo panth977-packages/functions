@@ -6,7 +6,7 @@ import type {
   SyncGenerator,
 } from "../functions/index.ts";
 import { getParams, type WrapperBuild } from "../_helper.ts";
-import { assign } from "./_helper.ts";
+import { assign, is } from "./_helper.ts";
 
 export function SafeParse<
   I extends AsyncFunction.zInput,
@@ -235,5 +235,17 @@ export function SafeParse({
     throw new Error("Unimplemented!");
   }
   assign(Wrapper, SafeParse);
+  Object.assign(Wrapper, { [BS]: behavior });
   return Wrapper;
+}
+const BS = Symbol("behavior");
+export function SafeParse_GetBehavior(w: any): {
+  debug?: boolean;
+  input?: boolean;
+  output?: boolean;
+  yield?: boolean;
+  next?: boolean;
+} {
+  if (!is(w, SafeParse)) throw new Error("This is not SafeParse Wrapper!");
+  return w[BS];
 }
