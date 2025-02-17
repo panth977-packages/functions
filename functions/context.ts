@@ -20,10 +20,11 @@ export type Context = {
 
 export type BuildContext<C extends Context> = {
   fromParent(context: Context, ref: string): C;
-  forTask(
+  createContext(id: string | null): readonly [C, VoidFunction];
+  runTask<R>(
     id: string | null,
-    task: (context: C, done: VoidFunction) => void
-  ): Promise<void>;
+    task: (context: C, done: VoidFunction) => R
+  ): Promise<R>;
 };
 
 export class DefaultContextState<T> implements ContextState<T> {
@@ -99,33 +100,26 @@ export class DefaultContext implements Context {
           context instanceof DefaultContext ? context.globalState : {},
       });
     },
-    async forTask(id, task) {
+    createContext(id) {
       const context = new DefaultContext({ id: id });
-      await Promise.allSettled(
+      Promise.allSettled(
         [...DefaultContext.onCreateFn].map((exe) => exe(context))
       );
       let completed = false;
-      return new Promise((resolve, reject) => {
-        try {
-          task(context, function () {
-            try {
-              if (completed) return;
-              Promise.allSettled(context.disposeFns.map((exe) => exe())).then(
-                () =>
-                  Promise.allSettled(
-                    [...DefaultContext.onDisposeFn].map((exe) => exe(context))
-                  )
-              );
-              completed = true;
-              resolve();
-            } catch (err) {
-              reject(err);
-            }
-          });
-        } catch (err) {
-          reject(err);
-        }
-      });
+      function dispose() {
+        if (completed) return;
+        Promise.allSettled(context.disposeFns.map((exe) => exe())).then(() =>
+          Promise.allSettled(
+            [...DefaultContext.onDisposeFn].map((exe) => exe(context))
+          )
+        );
+        completed = true;
+      }
+      return [context, dispose] as const;
+    },
+    async runTask(id, task) {
+      const [context, dispose] = this.createContext(id);
+      return await task(context, dispose);
     },
   };
   constructor(context: {
