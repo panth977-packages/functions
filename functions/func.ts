@@ -80,11 +80,26 @@ export class Func<I extends zFuncInput, O extends zFuncOutput, D extends Record<
     return `${this.ref.namespace}:${this.ref.name}`;
   }
   create(): ((context: Context, input: z.infer<I>) => zFuncReturn<O, Async>) & { node: Func<I, O, D, Async> } {
-    const build = (context: Context, input: z.infer<I>): zFuncReturn<O, Async> => {
-      const childContext = new Context(context, this.refString(), this);
-      return this.$(childContext, input);
-    };
-    build.bind(this);
+    let build: (context: Context, input: z.infer<I>) => zFuncReturn<O, Async>;
+    if (this.isAsync) {
+      build = async (context: Context, input: z.infer<I>): Promise<zFuncReturn<O, Async>> => {
+        const childContext = new Context(context, this.refString(), this);
+        try {
+          return await this.$(childContext, input);
+        } finally {
+          Context.dispose(childContext);
+        }
+      };
+    } else {
+      build = (context: Context, input: z.infer<I>): zFuncReturn<O, Async> => {
+        const childContext = new Context(context, this.refString(), this);
+        try {
+          return this.$(childContext, input);
+        } finally {
+          Context.dispose(childContext);
+        }
+      };
+    }
     return Object.assign(build, { node: this });
   }
 }
@@ -190,7 +205,7 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
  * console.log(fib10);
  * ```
  */
-export function syncFc() {
+export function syncFc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false> {
   return new FuncBuilder(false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
 }
 
@@ -213,6 +228,6 @@ export function syncFc() {
  * console.log(user10);
  * ```
  */
-export function asyncFc() {
+export function asyncFc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true> {
   return new FuncBuilder(true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
 }

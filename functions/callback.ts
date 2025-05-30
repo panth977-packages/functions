@@ -113,11 +113,56 @@ export class Callback<
   create(): ((context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>) => zCallbackCancel<Cancelable>) & {
     node: Callback<I, O, D, Multi, Cancelable>;
   } {
-    const build = (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>): zCallbackCancel<Cancelable> => {
-      const childContext = new Context(context, this.refString(), this);
-      return this.$(childContext, input, callback);
-    };
-    build.bind(this);
+    let build: (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>) => zCallbackCancel<Cancelable>;
+    if (!this.isMulti) {
+      if (!this.isCancelable) {
+        build = (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>): zCallbackCancel<Cancelable> => {
+          const childContext = new Context(context, this.refString(), this);
+          return this.$(childContext, input, (r: any) => {
+            callback(r);
+            Context.dispose(childContext);
+          });
+        };
+      } else {
+        build = (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>): zCallbackCancel<Cancelable> => {
+          const childContext = new Context(context, this.refString(), this);
+          const cancel = this.$(childContext, input, (r: any) => {
+            callback(r);
+            Context.dispose(childContext);
+          }) as VoidFunction;
+          return (() => {
+            cancel();
+            Context.dispose(childContext);
+          }) as zCallbackCancel<Cancelable>;
+        };
+      }
+    } else {
+      if (!this.isCancelable) {
+        build = (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>): zCallbackCancel<Cancelable> => {
+          const childContext = new Context(context, this.refString(), this);
+          return this.$(childContext, input, (r: any) => {
+            callback(r);
+            if (r.t === "End") {
+              Context.dispose(childContext);
+            }
+          });
+        };
+      } else {
+        build = (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>): zCallbackCancel<Cancelable> => {
+          const childContext = new Context(context, this.refString(), this);
+          const cancel = this.$(childContext, input, (r: any) => {
+            callback(r);
+            if (r.t === "End") {
+              Context.dispose(childContext);
+            }
+          }) as VoidFunction;
+          return (() => {
+            cancel();
+            Context.dispose(childContext);
+          }) as zCallbackCancel<Cancelable>;
+        };
+      }
+    }
     return Object.assign(build, { node: this });
   }
 }
@@ -265,7 +310,7 @@ export class CallbackBuilder<
  * fetchUser(context, 10, (user) => console.log(user));
  * ```
  */
-export function asyncCb() {
+export function asyncCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false, false> {
   return new CallbackBuilder(false, false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, {
     namespace: "Unknown",
     name: "Unknown",
@@ -296,7 +341,7 @@ export function asyncCb() {
  * setTimeout(cancel, 1000);
  * ```
  */
-export function asyncCancelableCb() {
+export function asyncCancelableCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false, true> {
   return new CallbackBuilder(true, false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, {
     namespace: "Unknown",
     name: "Unknown",
@@ -328,7 +373,7 @@ export function asyncCancelableCb() {
  * listenUserChanges(context, 10, (user) => console.log(user));
  * ```
  */
-export function subCb() {
+export function subCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true, false> {
   return new CallbackBuilder(false, true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
 }
 
@@ -361,6 +406,6 @@ export function subCb() {
  * setTimeout(() => cancel(), 5000);
  * ```
  */
-export function subCancelableCb() {
+export function subCancelableCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true, true> {
   return new CallbackBuilder(true, true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
 }

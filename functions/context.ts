@@ -312,7 +312,18 @@ type $HooksArg<K extends keyof typeof hooks> = (typeof hooks)[K] extends Context
 > ? X
   : never;
 
-export const hooks = Object.freeze({
+export const hooks: {
+  tInit: ContextState<THooksFn<[]>[]>;
+  cInit: ContextState<THooksFn<[]>[]>;
+  iLogMsg: ContextState<THooksFn<[string, string]>[]>;
+  cLogMsg: ContextState<THooksFn<[string, string]>[]>;
+  iLogError: ContextState<THooksFn<[string, unknown]>[]>;
+  cLogError: ContextState<THooksFn<[string, unknown]>[]>;
+  iLogDebug: ContextState<THooksFn<[string, unknown]>[]>;
+  cLogDebug: ContextState<THooksFn<[string, unknown]>[]>;
+  iDispose: ContextState<THooksFn<[]>[]>;
+  tDispose: ContextState<THooksFn<[]>[]>;
+} = Object.freeze({
   tInit: HooksState<[]>("T_INIT", "tree"),
   cInit: HooksState<[]>("C_INIT", "cascade"),
   iLogMsg: HooksState<[string, string]>("I_LOG_MSG", "internal"),

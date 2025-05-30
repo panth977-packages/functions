@@ -31,10 +31,10 @@ export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extend
     this.output = output;
     this.time = time;
   }
-  getOptions() {
+  getOptions(): { input: boolean; output: boolean; time: boolean } {
     return { input: this.input, output: this.output, time: this.time };
   }
-  setOptions({ input, output, time }: { input?: boolean; output?: boolean; time?: boolean }) {
+  setOptions({ input, output, time }: { input?: boolean; output?: boolean; time?: boolean }): void {
     this.input = input ?? this.input;
     this.output = output ?? this.output;
     this.time = time ?? this.time;
@@ -107,10 +107,10 @@ export class CbSafeParse<
     this.output = output;
     this.time = time;
   }
-  getOptions() {
+  getOptions(): { input: boolean; output: boolean; time: boolean } {
     return { input: this.input, output: this.output, time: this.time };
   }
-  setOptions({ input, output, time }: { input?: boolean; output?: boolean; time?: boolean }) {
+  setOptions({ input, output, time }: { input?: boolean; output?: boolean; time?: boolean }): void {
     this.input = input ?? this.input;
     this.output = output ?? this.output;
     this.time = time ?? this.time;
