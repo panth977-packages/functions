@@ -19,7 +19,7 @@ import {
 } from "../functions/index.ts";
 import type { Func } from "../functions/func.ts";
 
-export class FuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
+export class WFuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
   extends FuncWrapper<I, O, D, Async> {
   private cache = new Map<z.infer<I>, zFuncReturn<O, Async>>();
 
@@ -42,7 +42,7 @@ export class FuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extends
   }
 }
 
-export class CbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D extends Record<never, never>>
+export class WCbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D extends Record<never, never>>
   extends CallbackWrapper<I, O, D, false, false> {
   private cache = new Map<z.infer<I>, z.infer<O>>();
   private pending = new Map<z.infer<I>, zCallbackHandler<O, false>[]>();

@@ -20,7 +20,7 @@ import {
   type zFuncReturn,
 } from "../functions/index.ts";
 
-export class FuncTime<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
+export class WFuncTime<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
   extends FuncWrapper<I, O, D, Async> {
   private time: boolean;
   constructor({ time = true } = {}) {
@@ -62,7 +62,7 @@ export class FuncTime<I extends zFuncInput, O extends zFuncOutput, D extends Rec
   }
 }
 
-export class CbTime<
+export class WCbTime<
   I extends zCallbackInput,
   O extends zCallbackOutput,
   D extends Record<never, never>,

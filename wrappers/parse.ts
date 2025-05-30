@@ -20,7 +20,7 @@ import {
   type zFuncReturn,
 } from "../functions/index.ts";
 
-export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
+export class WFuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
   extends FuncWrapper<I, O, D, Async> {
   private input: boolean;
   private output: boolean;
@@ -77,7 +77,7 @@ export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extend
   }
 }
 
-export class CbSafeParse<
+export class WCbSafeParse<
   I extends zCallbackInput,
   O extends zCallbackOutput,
   D extends Record<never, never>,
@@ -156,7 +156,7 @@ export class CbSafeParse<
     if (r.t === "Error") {
       callback(r);
       if (context.node.isCancelable) {
-        return CbSafeParse.fakeCancel as zCallbackCancel<Cancelable>;
+        return WCbSafeParse.fakeCancel as zCallbackCancel<Cancelable>;
       }
       return undefined as zCallbackCancel<Cancelable>;
     }

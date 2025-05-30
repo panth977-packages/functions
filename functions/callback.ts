@@ -231,15 +231,9 @@ export class CallbackBuilder<
     }
     return new CallbackBuilder(this.isCancelable, this.isMulti, this.input, output, this.declaration, [], unimplemented, this.ref);
   }
-  $wrap(
-    wrap: CallbackWrapper<I, O, D, Multi, Cancelable>,
-    updateType?: (wrap: CallbackWrapper<I, O, D, Multi, Cancelable>) => CallbackWrapper<I, O, D, Multi, Cancelable>,
-  ): CallbackBuilder<I, O, D, Multi, Cancelable> {
+  $wrap(wrap: CallbackWrapper<I, O, D, Multi, Cancelable>): CallbackBuilder<I, O, D, Multi, Cancelable> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set wrapper after setting implementation!");
-    }
-    if (updateType) {
-      wrap = updateType(wrap);
     }
     return new CallbackBuilder(
       this.isCancelable,

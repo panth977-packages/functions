@@ -156,15 +156,9 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
     }
     return new FuncBuilder(this.isAsync, this.input, output, this.declaration, [], unimplemented, this.ref);
   }
-  $wrap(
-    wrap: FuncWrapper<I, O, D, Async>,
-    updateType?: (wrap: FuncWrapper<I, O, D, Async>) => FuncWrapper<I, O, D, Async>,
-  ): FuncBuilder<I, O, D, Async> {
+  $wrap(wrap: FuncWrapper<I, O, D, Async>): FuncBuilder<I, O, D, Async> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set wrapper after setting implementation!");
-    }
-    if (updateType) {
-      wrap = updateType(wrap);
     }
     return new FuncBuilder(this.isAsync, this.input, this.output, this.declaration, [...this.wrappers, wrap], unimplemented, this.ref);
   }

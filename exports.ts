@@ -3,4 +3,4 @@
  * @module
  */
 export * from "./functions/index.ts";
-export * as WRAPPERS from "./wrappers/index.ts";
+export * from "./wrappers/index.ts";
