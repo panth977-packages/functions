@@ -1,26 +1,26 @@
 /**
- * # Builders
- * - {@link FUNCTIONS.AsyncFunction.build}
- * - {@link FUNCTIONS.SyncFunction.build}
- * - {@link FUNCTIONS.AsyncGenerator.build}
- * - {@link FUNCTIONS.SyncGenerator.build}
- * 
+ * # Func Builders
+ * - {@link FUNCTIONS.syncFc}
+ * - {@link FUNCTIONS.asyncFc}
+ *
+ * # Callback Builders
+ * - {@link FUNCTIONS.asyncCb}
+ * - {@link FUNCTIONS.asyncCancelableCb}
+ * - {@link FUNCTIONS.subCb}
+ * - {@link FUNCTIONS.subCancelableCb}
+ *
  * # Wrappers
- * - {@link FUNCTIONS.WRAPPERS.CloneData}
- * - {@link FUNCTIONS.WRAPPERS.Debug}
- * - {@link FUNCTIONS.WRAPPERS.MemoData}
- * - {@link FUNCTIONS.WRAPPERS.SafeParse}
- * 
+ * - {@link FUNCTIONS.WRAPPERS.CbMemoized}
+ * - {@link FUNCTIONS.WRAPPERS.CbSafeParse}
+ * - {@link FUNCTIONS.WRAPPERS.FuncMemoized}
+ * - {@link FUNCTIONS.WRAPPERS.FuncSafeParse}
+ *
  * # Context
- * - {@link FUNCTIONS.DefaultContext}
- * - {@link FUNCTIONS.DefaultContext.onLog}
- * - {@link FUNCTIONS.DefaultContext.onCreate}
- * - {@link FUNCTIONS.DefaultContext.onDispose}
- * - {@link FUNCTIONS.DefaultContextState}
- * - {@link FUNCTIONS.DefaultContextState.CreateKey}
- * 
+ * - {@link FUNCTIONS.Context}
+ * - {@link FUNCTIONS.ContextState}
+ *
  * @module
- * 
+ *
  * @example
  * ```ts
  * import { FUNCTIONS } from "@panth977/functions";
@@ -29,7 +29,4 @@
  * ```
  */
 
-import { WRAPPERS } from "./exports.ts";
-
 export * as FUNCTIONS from "./exports.ts";
-WRAPPERS.CloneData

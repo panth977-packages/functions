@@ -1,28 +1,21 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/tools@~0.2.6": "0.2.6",
     "npm:crypto@1": "1.0.1",
-    "npm:zod@^3.23.0": "3.23.8"
-  },
-  "jsr": {
-    "@panth977/tools@0.2.6": {
-      "integrity": "a4c96137ccdd7e6cb4133eb393cb86a93424a4a6fcc09fe6d4e7fca1b2358923"
-    }
+    "npm:zod@^3.25.0": "3.25.42"
   },
   "npm": {
     "crypto@1.0.1": {
       "integrity": "sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig=="
     },
-    "zod@3.23.8": {
-      "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    "zod@3.25.42": {
+      "integrity": "sha512-PcALTLskaucbeHc41tU/xfjfhcz8z0GdhhDcSgrCTmSazUuqnYqiXO63M0QUBVwpBlsLsNVn5qHSC5Dw3KZvaQ=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/tools@~0.2.6",
       "npm:crypto@1",
-      "npm:zod@^3.23.0"
+      "npm:zod@^3.25.0"
     ]
   }
 }
