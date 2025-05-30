@@ -33,6 +33,7 @@ export abstract class CallbackWrapper<
     callback: zCallbackHandler<O, Multi>,
     invokeStack: CallbackInvokeStack<I, O, D, Multi, Cancelable>,
   ): zCallbackCancel<Cancelable>;
+  optimize(_: Callback<I, O, D, Multi, Cancelable>) {}
 }
 
 export class CallbackInvokeStack<
@@ -42,8 +43,8 @@ export class CallbackInvokeStack<
   Multi extends boolean,
   Cancelable extends boolean,
 > {
-  private wrappers: CallbackWrapper<I, O, D, Multi, Cancelable>[];
-  private implementation: (
+  protected wrappers: CallbackWrapper<I, O, D, Multi, Cancelable>[];
+  protected implementation: (
     context: Context<Callback<I, O, D, Multi, Cancelable>>,
     input: z.infer<I>,
     callback: zCallbackHandler<O, Multi>,
@@ -105,6 +106,9 @@ export class Callback<
     this.ref = ref;
     Object.freeze(this);
     Object.freeze(this.declaration);
+    for (const wrapper of wrappers) {
+      wrapper.optimize(this);
+    }
   }
   refString(suffix?: string): string {
     if (suffix) return `${this.ref.namespace}:${this.ref.name}:${suffix}`;

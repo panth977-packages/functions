@@ -40,16 +40,6 @@ export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extend
     this.time = time ?? this.time;
   }
 
-  private logNextEvent(context: Context<Func<I, O, D, Async>>): null | ((label: string) => void) {
-    if (!this.time) return null;
-    let now = Date.now();
-    context.logDebug(context.node.refString("init"), `${now} epoc in ms`);
-    return (label: string) => {
-      context.logDebug(context.node.refString(label), `after ${Date.now() - now} ms`);
-      now = Date.now();
-    };
-  }
-
   private parseInput(context: Context<Func<I, O, D, Async>>, input: z.infer<I>): z.infer<I> {
     if (!this.input) return input;
     const now = Date.now();
@@ -68,9 +58,8 @@ export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extend
     return result.data;
   }
 
-  private createAsyncThenHandler(context: Context<Func<I, O, D, Async>>, logTime: null | ((label: string) => void)) {
+  private createAsyncThenHandler(context: Context<Func<I, O, D, Async>>) {
     return (output: z.infer<O>) => {
-      logTime?.("AsyncCompleted");
       output = this.parseOutput(context, output);
       return output;
     };
@@ -78,11 +67,9 @@ export class FuncSafeParse<I extends zFuncInput, O extends zFuncOutput, D extend
 
   implementation(context: Context<Func<I, O, D, Async>>, input: z.infer<I>, invokeStack: FuncInvokeStack<I, O, D, Async>): zFuncReturn<O, Async> {
     input = this.parseInput(context, input);
-    const logTime = this.logNextEvent(context);
     let output = invokeStack.$(context, input);
-    logTime?.("SyncCompleted");
     if (output instanceof Promise) {
-      output = output.then(this.createAsyncThenHandler(context, logTime));
+      output = output.then(this.createAsyncThenHandler(context));
     } else {
       output = this.parseOutput(context, output as z.infer<O>) as zFuncReturn<O, Async>;
     }
@@ -116,16 +103,6 @@ export class CbSafeParse<
     this.time = time ?? this.time;
   }
 
-  private logNextEvent(context: Context<Callback<I, O, D, Multi, Cancelable>>): null | ((label: string) => void) {
-    if (!this.time) return null;
-    let now = Date.now();
-    context.logDebug(context.node.refString("init"), `${now} epoc in ms`);
-    return (label: string) => {
-      context.logDebug(context.node.refString(label), `after ${Date.now() - now} ms`);
-      now = Date.now();
-    };
-  }
-
   private parseInput(
     context: Context<Callback<I, O, D, Multi, Cancelable>>,
     input: z.infer<I>,
@@ -154,11 +131,9 @@ export class CbSafeParse<
 
   private createHandler(
     context: Context<Callback<I, O, D, Multi, Cancelable>>,
-    logTime: null | ((type: string) => void),
     callback: zCallbackHandler<O, Multi>,
   ): zCallbackHandler<O, Multi> {
     return (res: any) => {
-      logTime?.(res.t);
       if (this.output && res.t === "Data") {
         const r = this.parseOutput(context, res.d);
         if (r.t === "Error") {
@@ -169,12 +144,6 @@ export class CbSafeParse<
       }
       callback(res);
     };
-  }
-  private createCancelHandler(logTime: null | ((type: string) => void), cancel: VoidFunction): zCallbackCancel<Cancelable> {
-    return (() => {
-      logTime?.("Canceled");
-      cancel();
-    }) as zCallbackCancel<Cancelable>;
   }
 
   implementation(
@@ -192,13 +161,6 @@ export class CbSafeParse<
       return undefined as zCallbackCancel<Cancelable>;
     }
     input = r.d;
-    const logTime = this.logNextEvent(context);
-    const wrapCallback: zCallbackHandler<O, Multi> = this.createHandler(context, logTime, callback);
-    const cancel = invokeStack.$(context, input, wrapCallback);
-    logTime?.("SyncCompleted");
-    if (typeof cancel === "function") {
-      return this.createCancelHandler(logTime, cancel);
-    }
-    return undefined as zCallbackCancel<Cancelable>;
+    return invokeStack.$(context, input, this.createHandler(context, callback));
   }
 }

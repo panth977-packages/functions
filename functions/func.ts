@@ -24,12 +24,13 @@ export abstract class FuncWrapper<I extends zFuncInput, O extends zFuncOutput, D
     input: z.infer<I>,
     invokeStack: FuncInvokeStack<I, O, D, Async>,
   ): zFuncReturn<O, Async>;
+  optimize(_: Func<I, O, D, Async>) {}
 }
 
 /** Base Func Invoke Stack */
 export class FuncInvokeStack<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean> {
-  private wrappers: FuncWrapper<I, O, D, Async>[];
-  private implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>;
+  protected wrappers: FuncWrapper<I, O, D, Async>[];
+  protected implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>;
   constructor(
     wrappers: FuncWrapper<I, O, D, Async>[],
     implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>,
@@ -74,6 +75,9 @@ export class Func<I extends zFuncInput, O extends zFuncOutput, D extends Record<
     this.ref = ref;
     Object.freeze(this);
     Object.freeze(this.declaration);
+    for (const wrapper of wrappers) {
+      wrapper.optimize(this);
+    }
   }
   refString(suffix?: string): string {
     if (suffix) return `${this.ref.namespace}:${this.ref.name}:${suffix}`;
