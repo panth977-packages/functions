@@ -4,3 +4,4 @@
  */
 export * from "./memo.ts";
 export * from "./parse.ts";
+export * from "./time.ts";

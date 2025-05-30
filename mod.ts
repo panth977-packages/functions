@@ -10,10 +10,12 @@
  * - {@link FUNCTIONS.subCancelableCb}
  *
  * # Wrappers
- * - {@link FUNCTIONS.WRAPPERS.CbMemoized}
- * - {@link FUNCTIONS.WRAPPERS.CbSafeParse}
- * - {@link FUNCTIONS.WRAPPERS.FuncMemoized}
- * - {@link FUNCTIONS.WRAPPERS.FuncSafeParse}
+ * - {@link FUNCTIONS.WCbMemoized}
+ * - {@link FUNCTIONS.WCbSafeParse}
+ * - {@link FUNCTIONS.WFuncMemoized}
+ * - {@link FUNCTIONS.WFuncSafeParse}
+ * - {@link FUNCTIONS.WFuncTime}
+ * - {@link FUNCTIONS.WFuncTime}
  *
  * # Context
  * - {@link FUNCTIONS.Context}
