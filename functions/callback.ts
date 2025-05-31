@@ -5,10 +5,10 @@
 import { z } from "zod/v4";
 import { Context } from "../exports.ts";
 
-const unimplemented = ((_c: Context, _i: any, cb: (o: { t: "Error"; e: Error }) => void) => {
+export const unimplementedCb = ((_c: Context, _i: any, cb: (o: { t: "Error"; e: Error }) => void) => {
   cb({ t: "Error", e: new Error("Unimplemented") });
 }) as never;
-const unimplementedSchema = z.never();
+export const unimplementedCbSchema = z.never();
 
 /** Default Callback Input Schema */
 export type zCallbackInput = z.ZodType;
@@ -217,7 +217,7 @@ export class CallbackBuilder<
     if (this.wrappers.length) {
       throw new Error("Cannot set schema after setting wrappers!");
     }
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedCb) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     this.input = input as any;
@@ -227,21 +227,21 @@ export class CallbackBuilder<
     if (this.wrappers.length) {
       throw new Error("Cannot set schema after setting wrappers!");
     }
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedCb) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     this.output = output as any;
     return this as never;
   }
   $wrap(wrap: CallbackWrapper<I, O, D, Multi, Cancelable>): CallbackBuilder<I, O, D, Multi, Cancelable> {
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedCb) {
       throw new Error("Cannot set wrapper after setting implementation!");
     }
     this.wrappers.push(wrap);
     return this;
   }
   $declare<$D extends Record<any, any>>(dec: $D): CallbackBuilder<I, O, $D & D, Multi, Cancelable> {
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedCb) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     Object.assign(this.declaration, dec);
@@ -260,13 +260,13 @@ export class CallbackBuilder<
   ): ((context: Context, input: z.TypeOf<I>, callback: zCallbackHandler<O, Multi>) => zCallbackCancel<Cancelable>) & {
     node: Callback<I, O, D, Multi, Cancelable>;
   } {
-    if ((this.input as z.ZodType) === unimplementedSchema) {
+    if ((this.input as z.ZodType) === unimplementedCbSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
-    if ((this.output as z.ZodType) === unimplementedSchema) {
+    if ((this.output as z.ZodType) === unimplementedCbSchema) {
       throw new Error("Unimplemented Output Schema!");
     }
-    if (this.implementation === unimplemented) {
+    if (this.implementation === unimplementedCb) {
       throw new Error("Unimplemented implementation function!");
     }
     return new Callback(this.isCancelable, this.isMulti, this.input, this.output, this.declaration, this.wrappers, implementation, this.ref).create();
@@ -296,7 +296,7 @@ export class CallbackBuilder<
  * ```
  */
 export function asyncCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false, false> {
-  return new CallbackBuilder(false, false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, {
+  return new CallbackBuilder(false, false, unimplementedCbSchema, unimplementedCbSchema, {}, [], unimplementedCb, {
     namespace: "Unknown",
     name: "Unknown",
   });
@@ -327,7 +327,7 @@ export function asyncCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never,
  * ```
  */
 export function asyncCancelableCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false, true> {
-  return new CallbackBuilder(true, false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, {
+  return new CallbackBuilder(true, false, unimplementedCbSchema, unimplementedCbSchema, {}, [], unimplementedCb, {
     namespace: "Unknown",
     name: "Unknown",
   });
@@ -359,7 +359,10 @@ export function asyncCancelableCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Rec
  * ```
  */
 export function subCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true, false> {
-  return new CallbackBuilder(false, true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
+  return new CallbackBuilder(false, true, unimplementedCbSchema, unimplementedCbSchema, {}, [], unimplementedCb, {
+    namespace: "Unknown",
+    name: "Unknown",
+  });
 }
 
 /**
@@ -392,5 +395,8 @@ export function subCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, n
  * ```
  */
 export function subCancelableCb(): CallbackBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true, true> {
-  return new CallbackBuilder(true, true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
+  return new CallbackBuilder(true, true, unimplementedCbSchema, unimplementedCbSchema, {}, [], unimplementedCb, {
+    namespace: "Unknown",
+    name: "Unknown",
+  });
 }

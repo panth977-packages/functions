@@ -5,10 +5,10 @@
 import { z } from "zod/v4";
 import { Context } from "./context.ts";
 
-const unimplemented = (() => {
+export const unimplementedFunc = (() => {
   throw new Error("Unimplemented");
 }) as never;
-const unimplementedSchema = z.never();
+export const unimplementedFuncSchema = z.never();
 
 /** Default Func Input Schema */
 export type zFuncInput = z.ZodType;
@@ -142,7 +142,7 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
     if (this.wrappers.length) {
       throw new Error("Cannot set schema after setting wrappers!");
     }
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedFunc) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     this.input = input as any;
@@ -152,21 +152,21 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
     if (this.wrappers.length) {
       throw new Error("Cannot set schema after setting wrappers!");
     }
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedFunc) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     this.output = output as any;
     return this as never;
   }
   $wrap(wrap: FuncWrapper<I, O, D, Async>): FuncBuilder<I, O, D, Async> {
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedFunc) {
       throw new Error("Cannot set wrapper after setting implementation!");
     }
     this.wrappers.push(wrap);
     return this;
   }
   $declare<$D extends Record<any, any>>(dec: $D): FuncBuilder<I, O, $D & D, Async> {
-    if (this.implementation !== unimplemented) {
+    if (this.implementation !== unimplementedFunc) {
       throw new Error("Cannot set schema after setting implementation!");
     }
     Object.assign(this.declaration, dec);
@@ -179,13 +179,13 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
   $(
     implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>,
   ): ((context: Context, input: z.infer<I>) => zFuncReturn<O, Async>) & { node: Func<I, O, D, Async> } {
-    if ((this.input as z.ZodType) === unimplementedSchema) {
+    if ((this.input as z.ZodType) === unimplementedFuncSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
-    if ((this.output as z.ZodType) === unimplementedSchema) {
+    if ((this.output as z.ZodType) === unimplementedFuncSchema) {
       throw new Error("Unimplemented Output Schema!");
     }
-    if (this.implementation === unimplemented) {
+    if (this.implementation === unimplementedFunc) {
       throw new Error("Unimplemented implementation function!");
     }
     return new Func(this.isAsync, this.input, this.output, this.declaration, this.wrappers, implementation, this.ref).create();
@@ -209,7 +209,10 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
  * ```
  */
 export function syncFc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, false> {
-  return new FuncBuilder(false, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
+  return new FuncBuilder(false, unimplementedFuncSchema, unimplementedFuncSchema, {}, [], unimplementedFunc, {
+    namespace: "Unknown",
+    name: "Unknown",
+  });
 }
 
 /**
@@ -232,5 +235,8 @@ export function syncFc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, neve
  * ```
  */
 export function asyncFc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, true> {
-  return new FuncBuilder(true, unimplementedSchema, unimplementedSchema, {}, [], unimplemented, { namespace: "Unknown", name: "Unknown" });
+  return new FuncBuilder(true, unimplementedFuncSchema, unimplementedFuncSchema, {}, [], unimplementedFunc, {
+    namespace: "Unknown",
+    name: "Unknown",
+  });
 }
