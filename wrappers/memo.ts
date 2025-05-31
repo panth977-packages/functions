@@ -18,6 +18,7 @@ import {
   type zFuncReturn,
 } from "../functions/index.ts";
 import type { Func } from "../functions/func.ts";
+import type { Callback } from "../functions/callback.ts";
 
 export class WFuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
   extends FuncWrapper<I, O, D, Async> {
@@ -88,7 +89,7 @@ export class WCbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D 
     };
   }
   implementation(
-    context: Context,
+    context: Context<Callback<I, O, D, false, false>>,
     input: z.infer<I>,
     callback: zCallbackHandler<O, false>,
     invokeStack: CallbackInvokeStack<I, O, D, false, false>,
