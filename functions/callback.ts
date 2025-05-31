@@ -220,7 +220,8 @@ export class CallbackBuilder<
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new CallbackBuilder(this.isCancelable, this.isMulti, input, this.output, this.declaration, [], unimplemented, this.ref);
+    this.input = input as any;
+    return this as never;
   }
   $output<O extends zCallbackOutput>(output: O): CallbackBuilder<I, O, D, Multi, Cancelable> {
     if (this.wrappers.length) {
@@ -229,40 +230,26 @@ export class CallbackBuilder<
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new CallbackBuilder(this.isCancelable, this.isMulti, this.input, output, this.declaration, [], unimplemented, this.ref);
+    this.output = output as any;
+    return this as never;
   }
   $wrap(wrap: CallbackWrapper<I, O, D, Multi, Cancelable>): CallbackBuilder<I, O, D, Multi, Cancelable> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set wrapper after setting implementation!");
     }
-    return new CallbackBuilder(
-      this.isCancelable,
-      this.isMulti,
-      this.input,
-      this.output,
-      this.declaration,
-      [...this.wrappers, wrap],
-      unimplemented,
-      this.ref,
-    );
+    this.wrappers.push(wrap);
+    return this;
   }
   $declare<$D extends Record<any, any>>(dec: $D): CallbackBuilder<I, O, $D & D, Multi, Cancelable> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new CallbackBuilder(
-      this.isCancelable,
-      this.isMulti,
-      this.input,
-      this.output,
-      { ...dec, ...this.declaration },
-      this.wrappers,
-      unimplemented,
-      this.ref,
-    );
+    Object.assign(this.declaration, dec);
+    return this;
   }
   $ref(ref: { namespace: string; name: string }): CallbackBuilder<I, O, D, Multi, Cancelable> {
-    return new CallbackBuilder(this.isCancelable, this.isMulti, this.input, this.output, this.declaration, this.wrappers, unimplemented, ref);
+    this.ref = ref;
+    return this;
   }
   $(
     implementation: (

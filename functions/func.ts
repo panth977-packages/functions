@@ -145,7 +145,8 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new FuncBuilder(this.isAsync, input, this.output, this.declaration, [], unimplemented, this.ref);
+    this.input = input as any;
+    return this as never;
   }
   $output<O extends zFuncOutput>(output: O): FuncBuilder<I, O, D, Async> {
     if (this.wrappers.length) {
@@ -154,22 +155,26 @@ export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends 
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new FuncBuilder(this.isAsync, this.input, output, this.declaration, [], unimplemented, this.ref);
+    this.output = output as any;
+    return this as never;
   }
   $wrap(wrap: FuncWrapper<I, O, D, Async>): FuncBuilder<I, O, D, Async> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set wrapper after setting implementation!");
     }
-    return new FuncBuilder(this.isAsync, this.input, this.output, this.declaration, [...this.wrappers, wrap], unimplemented, this.ref);
+    this.wrappers.push(wrap);
+    return this;
   }
   $declare<$D extends Record<any, any>>(dec: $D): FuncBuilder<I, O, $D & D, Async> {
     if (this.implementation !== unimplemented) {
       throw new Error("Cannot set schema after setting implementation!");
     }
-    return new FuncBuilder(this.isAsync, this.input, this.output, { ...dec, ...this.declaration }, this.wrappers, unimplemented, this.ref);
+    Object.assign(this.declaration, dec);
+    return this;
   }
   $ref(ref: { namespace: string; name: string }): FuncBuilder<I, O, D, Async> {
-    return new FuncBuilder(this.isAsync, this.input, this.output, this.declaration, this.wrappers, unimplemented, ref);
+    this.ref = ref;
+    return this;
   }
   $(
     implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>,
