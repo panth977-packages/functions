@@ -16,6 +16,8 @@
  * - {@link FUNCTIONS.WFuncSafeParse}
  * - {@link FUNCTIONS.WFuncTime}
  * - {@link FUNCTIONS.WFuncTime}
+ * - {@link FUNCTIONS.WFuncQue}
+ * - {@link FUNCTIONS.WCbQue}
  *
  * # Context
  * - {@link FUNCTIONS.Context}

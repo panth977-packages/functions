@@ -81,8 +81,8 @@ export class Callback<
   readonly isMulti: Multi;
   readonly input: I;
   readonly output: O;
-  private declaration: D;
-  private ref: { namespace: string; name: string };
+  protected readonly declaration: D;
+  protected readonly ref: { namespace: string; name: string };
   constructor(
     isCancelable: Cancelable,
     isMulti: Multi,
@@ -104,7 +104,6 @@ export class Callback<
     this.output = output;
     this.declaration = declaration;
     this.ref = ref;
-    Object.freeze(this);
     Object.freeze(this.declaration);
     for (const wrapper of wrappers) {
       wrapper.optimize(this);
@@ -117,6 +116,7 @@ export class Callback<
   create(): ((context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>) => zCallbackCancel<Cancelable>) & {
     node: Callback<I, O, D, Multi, Cancelable>;
   } {
+    Object.freeze(this);
     let build: (context: Context, input: z.infer<I>, callback: zCallbackHandler<O, Multi>) => zCallbackCancel<Cancelable>;
     if (!this.isMulti) {
       if (!this.isCancelable) {
@@ -178,18 +178,18 @@ export class CallbackBuilder<
   Multi extends boolean,
   Cancelable extends boolean,
 > {
-  private isCancelable: Cancelable;
-  private isMulti: Multi;
-  private input: I;
-  private output: O;
-  private wrappers: CallbackWrapper<I, O, D, Multi, Cancelable>[];
-  private declaration: D;
-  private implementation: (
+  protected isCancelable: Cancelable;
+  protected isMulti: Multi;
+  protected input: I;
+  protected output: O;
+  protected wrappers: CallbackWrapper<I, O, D, Multi, Cancelable>[];
+  protected declaration: D;
+  protected implementation: (
     context: Context<Callback<I, O, D, Multi, Cancelable>>,
     input: z.infer<I>,
     callback: zCallbackHandler<O, Multi>,
   ) => zCallbackCancel<Cancelable>;
-  private ref: { namespace: string; name: string };
+  protected ref: { namespace: string; name: string };
   constructor(
     isCancelable: Cancelable,
     isMulti: Multi,

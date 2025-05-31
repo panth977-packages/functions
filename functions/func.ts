@@ -73,7 +73,6 @@ export class Func<I extends zFuncInput, O extends zFuncOutput, D extends Record<
     this.output = output;
     this.declaration = declaration;
     this.ref = ref;
-    Object.freeze(this);
     Object.freeze(this.declaration);
     for (const wrapper of wrappers) {
       wrapper.optimize(this);
@@ -84,6 +83,7 @@ export class Func<I extends zFuncInput, O extends zFuncOutput, D extends Record<
     return `${this.ref.namespace}:${this.ref.name}`;
   }
   create(): ((context: Context, input: z.infer<I>) => zFuncReturn<O, Async>) & { node: Func<I, O, D, Async> } {
+    Object.freeze(this);
     let build: (context: Context, input: z.infer<I>) => zFuncReturn<O, Async>;
     if (this.isAsync) {
       build = async (context: Context, input: z.infer<I>): Promise<zFuncReturn<O, Async>> => {
@@ -111,13 +111,13 @@ export class Func<I extends zFuncInput, O extends zFuncOutput, D extends Record<
  * Base Func Builder, Use this to build a Func Node
  */
 export class FuncBuilder<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean> {
-  private isAsync: Async;
-  private input: I;
-  private output: O;
-  private wrappers: FuncWrapper<I, O, D, Async>[];
-  private declaration: D;
-  private implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>;
-  private ref: { namespace: string; name: string };
+  protected isAsync: Async;
+  protected input: I;
+  protected output: O;
+  protected wrappers: FuncWrapper<I, O, D, Async>[];
+  protected declaration: D;
+  protected implementation: (context: Context<Func<I, O, D, Async>>, input: z.infer<I>) => zFuncReturn<O, Async>;
+  protected ref: { namespace: string; name: string };
   constructor(
     isAsync: Async,
     input: I,
