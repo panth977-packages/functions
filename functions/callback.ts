@@ -5,10 +5,10 @@
 import { z } from "zod/v4";
 import { Context } from "../exports.ts";
 
-export const unimplementedCb = ((_c: Context, _i: any, cb: (o: { t: "Error"; e: Error }) => void) => {
+export const unimplementedCb: never = ((_c: Context, _i: any, cb: (o: { t: "Error"; e: Error }) => void) => {
   cb({ t: "Error", e: new Error("Unimplemented") });
 }) as never;
-export const unimplementedCbSchema = z.never();
+export const unimplementedCbSchema: z.ZodNever = z.never();
 
 /** Default Callback Input Schema */
 export type zCallbackInput = z.ZodType;

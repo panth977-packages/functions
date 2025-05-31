@@ -5,10 +5,10 @@
 import { z } from "zod/v4";
 import { Context } from "./context.ts";
 
-export const unimplementedFunc = (() => {
+export const unimplementedFunc: never = (() => {
   throw new Error("Unimplemented");
 }) as never;
-export const unimplementedFuncSchema = z.never();
+export const unimplementedFuncSchema: z.ZodNever = z.never();
 
 /** Default Func Input Schema */
 export type zFuncInput = z.ZodType;
