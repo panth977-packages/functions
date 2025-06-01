@@ -2,7 +2,6 @@
  * Context & Node & State
  * @module
  */
-import { randomUUID } from "crypto";
 
 export class ContextState<T = unknown> {
   readonly label: string;
@@ -63,7 +62,7 @@ export class ContextState<T = unknown> {
    * @param context - The context to get the value of.
    * @returns The value of the state.
    */
-  of<T>(context: Context): T | undefined {
+  of(context: Context): T | undefined {
     return Context.getState<T>(context, this as unknown as ContextState<T>);
   }
 
@@ -96,7 +95,7 @@ export class Context<N = any> {
     return tree.reverse();
   }
 
-  constructor(c: Context | string | null, path: string, node: N) {
+  constructor(c: Context | string, path: string, node: N) {
     this.path = path;
     this.node = node;
     this.internalState = new Map();
@@ -109,7 +108,7 @@ export class Context<N = any> {
     } else {
       this.parent = null;
       this.treeState = new Map();
-      this.id = c ?? randomUUID();
+      this.id = c;
     }
     this.init();
   }

@@ -4,33 +4,45 @@
  */
 import type z from "zod/v4";
 import {
-  type CallbackInvokeStack,
-  CallbackWrapper,
   type Context,
+  type FuncCbHandler,
+  type FuncCbReturn,
+  type FuncDeclaration,
+  type FuncInput,
   type FuncInvokeStack,
+  type FuncOutput,
+  type FuncReturn,
+  type FunctionTypes,
   FuncWrapper,
-  type zCallbackCancel,
-  type zCallbackHandler,
-  type zCallbackInput,
-  type zCallbackOutput,
-  type zFuncInput,
-  type zFuncOutput,
-  type zFuncReturn,
 } from "../functions/index.ts";
 import type { Func } from "../functions/func.ts";
-import type { Callback } from "../functions/callback.ts";
-
-export class WFuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>, Async extends boolean>
-  extends FuncWrapper<I, O, D, Async> {
-  private cache = new Map<z.infer<I>, zFuncReturn<O, Async>>();
-
-  private createAsyncCatchHandler(input: z.infer<I>): VoidFunction {
-    return () => {
-      this.cache.delete(input);
-    };
+export class SyncFuncMemo<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
+  extends FuncWrapper<I, O, D, FunctionTypes["SyncFunc"]> {
+  protected cache: Map<z.infer<I>, FuncReturn<O, FunctionTypes["SyncFunc"]>> = new Map();
+  implementation(
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["SyncFunc"]>,
+    context: Context<Func<I, O, D, FunctionTypes["SyncFunc"]>>,
+    input: z.infer<I>,
+  ): FuncReturn<O, FunctionTypes["SyncFunc"]> {
+    if (this.cache.has(input)) {
+      return this.cache.get(input)!;
+    }
+    const output = invokeStack.$(context, input);
+    this.cache.set(input, output);
+    return output;
   }
-
-  implementation(context: Context<Func<I, O, D, Async>>, input: z.infer<I>, invokeStack: FuncInvokeStack<I, O, D, Async>): zFuncReturn<O, Async> {
+}
+export class AsyncFuncMemo<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
+  extends FuncWrapper<I, O, D, FunctionTypes["AsyncFunc"]> {
+  protected cache: Map<z.infer<I>, FuncReturn<O, FunctionTypes["AsyncFunc"]>> = new Map();
+  createAsyncCatchHandler(input: z.infer<I>): () => void {
+    return () => this.cache.delete(input);
+  }
+  implementation(
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncFunc"]>,
+    context: Context<Func<I, O, D, FunctionTypes["AsyncFunc"]>>,
+    input: z.infer<I>,
+  ): FuncReturn<O, FunctionTypes["AsyncFunc"]> {
     if (this.cache.has(input)) {
       return this.cache.get(input)!;
     }
@@ -42,18 +54,11 @@ export class WFuncMemoized<I extends zFuncInput, O extends zFuncOutput, D extend
     return output;
   }
 }
-
-export class WCbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D extends Record<never, never>>
-  extends CallbackWrapper<I, O, D, false, false> {
-  private cache = new Map<z.infer<I>, z.infer<O>>();
-  private pending = new Map<z.infer<I>, zCallbackHandler<O, false>[]>();
-  allowParalledCalls: boolean;
-  constructor({ allowParalledCalls = false } = {}) {
-    super();
-    this.allowParalledCalls = allowParalledCalls;
-  }
-
-  private addPending(input: z.infer<I>, callback: zCallbackHandler<O, false>): boolean {
+export class AsyncCbMemo<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
+  extends FuncWrapper<I, O, D, FunctionTypes["AsyncCb"]> {
+  protected cache: Map<z.infer<I>, z.infer<O>> = new Map();
+  protected pending: Map<z.infer<I>, FuncCbHandler<O, FunctionTypes["AsyncCb"]>[]> = new Map();
+  private addPending(input: z.infer<I>, callback: FuncCbHandler<O, FunctionTypes["AsyncCb"]>): boolean {
     const cbs = this.pending.get(input) ?? [];
     cbs.push(callback);
     if (cbs.length === 1) {
@@ -63,7 +68,7 @@ export class WCbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D 
     return false;
   }
 
-  private notifyPending(input: z.infer<I>, res: Parameters<zCallbackHandler<O, false>>[0]) {
+  private notifyPending(input: z.infer<I>, res: Parameters<FuncCbHandler<O, FunctionTypes["AsyncCb"]>>[0]) {
     const cbs = this.pending.get(input);
     if (cbs === undefined) return;
     for (const cb of cbs) {
@@ -71,33 +76,22 @@ export class WCbMemoized<I extends zCallbackInput, O extends zCallbackOutput, D 
     }
     this.pending.delete(input);
   }
-
-  private createParallelInvokeHandler(input: z.infer<I>, callback: zCallbackHandler<O, false>): zCallbackHandler<O, false> {
-    return (res) => {
-      if (res.t === "Data") {
-        this.cache.set(input, res.d);
-      }
-      callback(res);
-    };
-  }
-  private createFirstInvokeHandler(input: z.infer<I>): zCallbackHandler<O, false> {
-    return (res) => {
+  private createFirstInvokeHandler(input: z.infer<I>): FuncCbHandler<O, FunctionTypes["AsyncCb"]> {
+    return ((res: any) => {
       if (res.t === "Data") {
         this.cache.set(input, res.d);
       }
       this.notifyPending(input, res);
-    };
+    }) as any;
   }
   implementation(
-    context: Context<Callback<I, O, D, false, false>>,
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCb"]>,
+    context: Context<Func<I, O, D, FunctionTypes["AsyncCb"]>>,
     input: z.infer<I>,
-    callback: zCallbackHandler<O, false>,
-    invokeStack: CallbackInvokeStack<I, O, D, false, false>,
-  ): zCallbackCancel<false> {
+    callback: FuncCbHandler<O, FunctionTypes["AsyncCb"]>,
+  ): FuncCbReturn<FunctionTypes["AsyncCb"]> {
     if (this.cache.has(input)) {
       callback({ t: "Data", d: this.cache.get(input)! });
-    } else if (this.allowParalledCalls) {
-      invokeStack.$(context, input, this.createParallelInvokeHandler(input, callback));
     } else {
       const isFirst = this.addPending(input, callback);
       if (isFirst) {

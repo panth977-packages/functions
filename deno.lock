@@ -1,20 +1,15 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:crypto@1": "1.0.1",
     "npm:zod@^3.25.0": "3.25.42"
   },
   "npm": {
-    "crypto@1.0.1": {
-      "integrity": "sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig=="
-    },
     "zod@3.25.42": {
       "integrity": "sha512-PcALTLskaucbeHc41tU/xfjfhcz8z0GdhhDcSgrCTmSazUuqnYqiXO63M0QUBVwpBlsLsNVn5qHSC5Dw3KZvaQ=="
     }
   },
   "workspace": {
     "dependencies": [
-      "npm:crypto@1",
       "npm:zod@^3.25.0"
     ]
   }

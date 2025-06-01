@@ -4,61 +4,29 @@
  */
 import type z from "zod/v4";
 import {
-  type CallbackInvokeStack,
-  CallbackWrapper,
-  type Context,
+  type FuncCbHandler,
+  type FuncCbReturn,
+  type FuncDeclaration,
+  type FuncInput,
   type FuncInvokeStack,
+  type FuncOutput,
+  type FunctionTypes,
+  type FuncTypes,
   FuncWrapper,
-  type zCallbackCancel,
-  type zCallbackHandler,
-  type zCallbackInput,
-  type zCallbackOutput,
-  type zFuncInput,
-  type zFuncOutput,
-  type zFuncReturn,
 } from "../functions/index.ts";
+import type { Context } from "../functions/context.ts";
 import type { Func } from "../functions/func.ts";
-import type { Callback } from "../functions/callback.ts";
 
-export class WFuncQue<I extends zFuncInput, O extends zFuncOutput, D extends Record<any, any>> extends FuncWrapper<I, O, D, true> {
-  private que = new Array<() => Promise<void>>();
+abstract class CbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
+  extends FuncWrapper<I, O, D, Type> {
+  protected que: Array<(cb: VoidFunction) => void> = [];
   readonly maxConcurrency: number;
   constructor(maxConcurrency = 1) {
     super();
     this.maxConcurrency = maxConcurrency;
   }
-
-  private running = 0;
-  private async runJob(): Promise<void> {
-    if (this.running >= this.maxConcurrency) return;
-    const job = this.que.shift();
-    if (!job) return;
-    this.running++;
-    await job();
-    this.running--;
-    return this.runJob();
-  }
-
-  implementation(context: Context<Func<I, O, D, true>>, input: z.infer<I>, invokeStack: FuncInvokeStack<I, O, D, true>): zFuncReturn<O, true> {
-    return new Promise((resolve, reject) => {
-      this.que.push(() => invokeStack.$(context, input).then(resolve, reject));
-      this.runJob();
-    });
-  }
-}
-
-export class WCbQue<I extends zCallbackInput, O extends zCallbackOutput, D extends Record<never, never>, Cancelable extends boolean>
-  extends CallbackWrapper<I, O, D, false, Cancelable> {
-  private que = new Array<(cb: VoidFunction) => void>();
-
-  readonly maxConcurrency: number;
-  constructor(maxConcurrency = 1) {
-    super();
-    this.maxConcurrency = maxConcurrency;
-  }
-
-  private running = 0;
-  private runJob(): void {
+  protected running = 0;
+  protected runJob(): void {
     if (this.running >= this.maxConcurrency) return;
     const job = this.que.shift();
     if (!job) return;
@@ -68,38 +36,61 @@ export class WCbQue<I extends zCallbackInput, O extends zCallbackOutput, D exten
       this.runJob();
     });
   }
+}
 
-  implementation(
-    context: Context<Callback<I, O, D, false, Cancelable>>,
-    input: z.infer<I>,
-    callback: zCallbackHandler<O, false>,
-    invokeStack: CallbackInvokeStack<I, O, D, false, Cancelable>,
-  ): zCallbackCancel<Cancelable> {
-    let running = false;
-    let cancel: null | zCallbackCancel<Cancelable> = null;
+export class AsyncFuncQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration> extends CbQue<I, O, D, FunctionTypes["AsyncFunc"]> {
+  override implementation(
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncFunc"]>,
+    context: Context<Func<I, O, D, FunctionTypes["AsyncFunc"]>>,
+    input: z.core.output<I>,
+  ): Promise<z.core.output<O>> {
+    return new Promise((resolve, reject) => {
+      this.que.push((done) => invokeStack.$(context, input).then(resolve, reject).then(done));
+      this.runJob();
+    });
+  }
+}
+
+export class AsyncCbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration> extends CbQue<I, O, D, FunctionTypes["AsyncCb"]> {
+  override implementation(
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCb"]>,
+    context: Context<Func<I, O, D, FunctionTypes["AsyncCb"]>>,
+    input: z.core.output<I>,
+    callback: FuncCbHandler<O, FunctionTypes["AsyncCb"]>,
+  ): FuncCbReturn<FunctionTypes["AsyncCb"]> {
+    this.que.push((cb) => {
+      invokeStack.$(context, input, (r) => {
+        cb();
+        callback(r);
+      });
+    });
+    this.runJob();
+  }
+}
+export class AsyncCancelableCbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
+  extends CbQue<I, O, D, FunctionTypes["AsyncCancelableCb"]> {
+  override implementation(
+    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCancelableCb"]>,
+    context: Context<Func<I, O, D, FunctionTypes["AsyncCancelableCb"]>>,
+    input: z.core.output<I>,
+    callback: FuncCbHandler<O, FunctionTypes["AsyncCancelableCb"]>,
+  ): FuncCbReturn<FunctionTypes["AsyncCancelableCb"]> {
+    let cancel: FuncCbReturn<FunctionTypes["AsyncCancelableCb"]> | null = null;
     const handler = (cb: VoidFunction) => {
-      running = true;
       cancel = invokeStack.$(context, input, (r) => {
-        running = false;
         cb();
         callback(r);
       });
     };
     this.que.push(handler);
     this.runJob();
-    if (context.node.isCancelable) {
-      return (() => {
-        if (running) {
-          cancel?.();
-          cancel = null;
-        } else {
-          const i = this.que.indexOf(handler);
-          if (i !== -1) {
-            this.que.splice(i, 1);
-          }
-        }
-      }) as zCallbackCancel<Cancelable>;
-    }
-    return undefined as zCallbackCancel<Cancelable>;
+    return () => {
+      const i = this.que.indexOf(handler);
+      if (i !== -1) {
+        this.que.splice(i, 1);
+      }
+      cancel?.();
+      cancel = null;
+    };
   }
 }
