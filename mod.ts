@@ -1,50 +1,57 @@
 /**
  * # Context
- * - {@link FUNCTIONS.Context}
- * - {@link FUNCTIONS.ContextState}
+ * - {@link F.Context}
+ * - {@link F.ContextState}
  *
  * # Func Builders
- * - {@link FUNCTIONS.syncFunc}
- * - {@link FUNCTIONS.asyncFunc}
- * - {@link FUNCTIONS.asyncCb}
- * - {@link FUNCTIONS.asyncCancelableCb}
- * - {@link FUNCTIONS.subsCb}
- * - {@link FUNCTIONS.subsCancelableCb}
+ * - {@link F.syncFunc}
+ * - {@link F.asyncFunc}
+ * - {@link F.asyncCb}
+ * - {@link F.asyncCancelableCb}
+ * - {@link F.subsCb}
+ * - {@link F.subsCancelableCb}
+ *
+ * # Func Utils
+ * - {@link F.isFuncType}
+ * - {@link F.invoke}
+ * - {@link F.mergeInvokableAsCb}
+ * - {@link F.mergeInvokableAsPromise}
+ * - {@link F.toInvokable}
  *
  * # Memo Wrappers
- * - {@link FUNCTIONS.SyncFuncMemo}
- * - {@link FUNCTIONS.AsyncFuncMemo}
- * - {@link FUNCTIONS.AsyncCbMemo}
+ * - {@link F.SyncFuncMemo}
+ * - {@link F.AsyncFuncMemo}
+ * - {@link F.AsyncCbMemo}
  *
  * # Paeser Wrappers
- * - {@link FUNCTIONS.SyncFuncParser}
- * - {@link FUNCTIONS.AsyncFuncParser}
- * - {@link FUNCTIONS.AsyncCbParser}
- * - {@link FUNCTIONS.AsyncCancelableCbParser}
- * - {@link FUNCTIONS.SubsCbParser}
- * - {@link FUNCTIONS.SubsCancelableCbParser}
+ * - {@link F.SyncFuncParser}
+ * - {@link F.AsyncFuncParser}
+ * - {@link F.AsyncCbParser}
+ * - {@link F.AsyncCancelableCbParser}
+ * - {@link F.SubsCbParser}
+ * - {@link F.SubsCancelableCbParser}
  *
  * # Que Wrappers
- * - {@link FUNCTIONS.AsyncFuncQue}
- * - {@link FUNCTIONS.AsyncCbQue}
- * - {@link FUNCTIONS.AsyncCancelableCbQue}
+ * - {@link F.AsyncFuncQue}
+ * - {@link F.AsyncCbQue}
+ * - {@link F.AsyncCancelableCbQue}
  *
  * # Time Wrappers
- * - {@link FUNCTIONS.SyncFuncTime}
- * - {@link FUNCTIONS.AsyncFuncTime}
- * - {@link FUNCTIONS.AsyncCbTime}
- * - {@link FUNCTIONS.AsyncCancelableCbTime}
- * - {@link FUNCTIONS.SubsCbTime}
- * - {@link FUNCTIONS.SubsCancelableCbTime}
+ * - {@link F.SyncFuncTime}
+ * - {@link F.AsyncFuncTime}
+ * - {@link F.AsyncCbTime}
+ * - {@link F.AsyncCancelableCbTime}
+ * - {@link F.SubsCbTime}
+ * - {@link F.SubsCancelableCbTime}
  *
  * @module
  *
  * @example
  * ```ts
- * import { FUNCTIONS } from "@panth977/functions";
+ * import { F } from "@panth977/functions";
  *
- * FUNCTIONS.{api}
+ * F.{api}
  * ```
  */
 
-export * as FUNCTIONS from "./exports.ts";
+export * as F from "./exports.ts";

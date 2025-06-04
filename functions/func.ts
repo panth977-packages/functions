@@ -36,9 +36,9 @@ export type FuncReturn<O extends FuncOutput, Type extends FuncTypes> = Type exte
   : Type extends FunctionTypes["SyncFunc"] ? z.infer<O>
   : never;
 export type FuncCbHandler<O extends FuncOutput, Type extends FuncTypes> = Type extends FunctionTypes["AsyncCb"] | FunctionTypes["AsyncCancelableCb"]
-  ? (response: { t: "Data"; d: z.infer<O> } | { t: "Error"; e: Error }) => void
+  ? (response: { t: "Data"; d: z.infer<O> } | { t: "Error"; e: unknown }) => void
   : Type extends FunctionTypes["SubsCb"] | FunctionTypes["SubsCancelableCb"]
-    ? (response: { t: "Data"; d: z.infer<O> } | { t: "Error"; e: Error } | { t: "End" }) => void
+    ? (response: { t: "Data"; d: z.infer<O> } | { t: "Error"; e: unknown } | { t: "End" }) => void
   : never;
 export type FuncCbReturn<Type extends FuncTypes> = Type extends FunctionTypes["AsyncCancelableCb"] | FunctionTypes["SubsCancelableCb"] ? () => void
   : Type extends FunctionTypes["AsyncCb"] | FunctionTypes["SubsCb"] ? void
@@ -53,6 +53,9 @@ export type FuncImplementation<I extends FuncInput, O extends FuncOutput, D exte
   : Type extends FunctionTypes["AsyncCb"] | FunctionTypes["AsyncCancelableCb"] | FunctionTypes["SubsCb"] | FunctionTypes["SubsCancelableCb"]
     ? (context: Context<Func<I, O, D, Type>>, input: z.infer<I>, handler: FuncCbHandler<O, Type>) => FuncCbReturn<Type>
   : never;
+export type FuncExported<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> = FuncExposed<I, O, Type> & {
+  node: Func<I, O, D, Type>;
+};
 
 /** Base Func Wrapper */
 export abstract class FuncWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> {
@@ -83,7 +86,9 @@ export class FuncInvokeStack<I extends FuncInput, O extends FuncOutput, D extend
     }
   }
 }
-
+declare abstract class ClassXYZ {
+  constructor(..._: any[]);
+}
 /**
  * Base Func Node [Is one of node used in Context.node]
  */
@@ -94,6 +99,18 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
   readonly output: O;
   readonly declaration: D;
   readonly ref: { namespace: string; name: string };
+  static getWrapperOf<W extends typeof ClassXYZ, I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>(
+    func: Func<I, O, D, Type>,
+    wrapperClass: W,
+  ): InstanceType<W>[] {
+    const w: InstanceType<W>[] = [];
+    for (const x of func.wrappers) {
+      if (x instanceof (wrapperClass as any)) {
+        w.push(x as InstanceType<W>);
+      }
+    }
+    return w;
+  }
   constructor(
     type: Type,
     input: I,
@@ -118,7 +135,7 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
     if (suffix) return `${this.ref.namespace}:${this.ref.name}:${suffix}`;
     return `${this.ref.namespace}:${this.ref.name}`;
   }
-  create(): FuncExposed<I, O, Type> & { node: Func<I, O, D, Type> } {
+  create(): FuncExported<I, O, D, Type> {
     Object.freeze(this);
     let build: any;
     if (this.type === FunctionTypes.AsyncFunc) {
@@ -242,7 +259,7 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
   }
   $(
     implementation: FuncImplementation<I, O, D, Type>,
-  ): FuncExposed<I, O, Type> & { node: Func<I, O, D, Type> } {
+  ): FuncExported<I, O, D, Type> {
     if ((this.input as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
