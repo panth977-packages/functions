@@ -54,4 +54,5 @@
  * ```
  */
 
-export * as F from "./exports.ts";
+import * as F from "./exports.ts";
+export { F };

@@ -82,6 +82,7 @@ export abstract class Invokable<OT> {
   /**
    * Merge multiple invokables into a single invokable. Kind of like `Promise.all`.
    *
+   * @example
    * ```ts
    * const fib = syncFunc()...
    * const fetchUser = asyncFunc()...
@@ -211,6 +212,7 @@ export class MergedInvokable<T extends readonly unknown[] | []> extends Invokabl
 
 /**
  * bind your api with a input.
+ * @example
  * ```ts
  * const fib = syncFunc()...
  * const fetchUser = asyncFunc()...

@@ -272,6 +272,7 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
 
 /**
  * Base Func Builder for synchronous functions
+ * @example
  * ```ts
  * const fib = syncFunc()
  *   .$input(z.number().int().positive())
@@ -295,6 +296,7 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, ne
 
 /**
  * Base Func Builder for asynchronous functions
+ * @example
  * ```ts
  * const fetchUser = asyncFunc()
  *   .$input(z.number().int().positive())
@@ -321,6 +323,7 @@ export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, n
 
 /**
  * Base Async Callback Builder for asynchronous functions
+ * @example
  * ```ts
  * const fetchUser = asyncCb()
  *   .$input(z.number().int().positive())
@@ -347,6 +350,7 @@ export function asyncCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, nev
 
 /**
  * Base Async Cancelable Callback Builder for asynchronous functions
+ * @example
  * ```ts
  * const fetchUser = asyncCancelableCb()
  *   .$input(z.number().int().positive())
@@ -378,6 +382,7 @@ export function asyncCancelableCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<
 
 /**
  * Base Multi Callback Builder for subscriptions
+ * @example
  * ```ts
  * const listenUserChanges = subCb()
  *   .$input(z.number().int().positive())
@@ -407,6 +412,7 @@ export function subsCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, neve
 
 /**
  * Base Multi Cancelable Callback Builder for subscriptions
+ * @example
  * ```ts
  * const listenUserChanges = subCb()
  *   .$input(z.number().int().positive())
