@@ -4,176 +4,104 @@
  */
 import type z from "zod/v4";
 import {
-  type FuncCbHandler,
-  type FuncCbReturn,
   type FuncDeclaration,
   type FuncInput,
+  type FuncInvokeStack,
   type FuncOutput,
-  type FunctionTypes,
   type FuncTypes,
-  FuncWrapper,
+  GenericFuncWrapper,
 } from "../functions/index.ts";
 import type { Context } from "../functions/context.ts";
-import type { Func, FuncInvokeStack } from "../functions/func.ts";
+import type { Func } from "../functions/func.ts";
+import type { AsyncCbReceiver } from "../functions/handle_async.ts";
+import type { SubsCbReceiver } from "../functions/handle_subs.ts";
 
-abstract class ParserWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends FuncWrapper<I, O, D, Type> {
-  input: boolean;
-  output: boolean;
-  time: boolean;
-  constructor({ input = true, output = true, time = false } = {}) {
+export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
+  extends GenericFuncWrapper<I, O, D, Type> {
+  constructor(public input = true, public output = true, public time = false) {
     super();
-    this.input = input;
-    this.output = output;
-    this.time = time;
   }
-}
-abstract class FuncParserWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends ParserWrapper<I, O, D, Type> {
-  protected parseInput(context: Context<Func<I, O, D, Type>>, input: z.infer<I>): z.infer<I> {
-    if (!this.input) return input;
-    const now = this.time ? Date.now() : 0;
-    const result = context.node.input.safeParse(input);
-    if (now) context.logDebug(context.node.refString("Input"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
+  static parseInput<T>(
+    context: Context,
+    time: boolean,
+    input: T,
+  ): T {
+    const now = time ? Date.now() : 0;
+    const func = (context.node) as Func<z.ZodType<T>, any, any, any>;
+    const result = func.input.safeParse(input);
+    if (now !== 0) context.logDebug(func.refString("Input"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
     if (!result.success) throw result.error;
     return result.data;
   }
-
-  protected parseOutput(context: Context<Func<I, O, D, Type>>, output: z.infer<O>): z.infer<O> {
-    if (!this.output) return output;
-    const now = this.time ? Date.now() : 0;
-    const result = context.node.output.safeParse(output);
-    if (now) context.logDebug(context.node.refString("Output"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
+  static parseOutput<T>(
+    context: Context,
+    time: boolean,
+    output: T,
+  ): T {
+    const now = time ? Date.now() : 0;
+    const func = (context.node) as Func<any, z.ZodType<T>, any, any>;
+    const result = func.output.safeParse(output);
+    if (now !== 0) context.logDebug(func.refString("Output"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
     if (!result.success) throw result.error;
     return result.data;
   }
-}
-export class SyncFuncParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends FuncParserWrapper<I, O, D, FunctionTypes["SyncFunc"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["SyncFunc"]>,
-    context: Context<Func<I, O, D, FunctionTypes["SyncFunc"]>>,
+  override SyncFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "SyncFunc">,
+    context: Context<Func<I, O, D, "SyncFunc">>,
     input: z.core.output<I>,
   ): z.core.output<O> {
-    return this.parseOutput(context, invokeStack.$(context, this.parseInput(context, input)));
+    if (this.input) {
+      input = WFParser.parseInput(context, this.time, input);
+    }
+    let output = invokeStack.$(context, input);
+    if (this.output) {
+      output = WFParser.parseOutput(context, this.time, output);
+    }
+    return output;
   }
-}
-export class AsyncFuncParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends FuncParserWrapper<I, O, D, FunctionTypes["AsyncFunc"]> {
-  override async implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncFunc"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncFunc"]>>,
+  override AsyncFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
+    context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
   ): Promise<z.core.output<O>> {
-    return this.parseOutput(context, await invokeStack.$(context, this.parseInput(context, input)));
-  }
-}
-abstract class CbParserWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends ParserWrapper<I, O, D, Type> {
-  protected parseInput(context: Context<Func<I, O, D, Type>>, input: z.infer<I>): { t: "Error"; e: Error } | { t: "Data"; d: z.infer<I> } {
-    if (!this.input) return { t: "Data", d: input };
-    const now = this.time ? Date.now() : 0;
-    const result = context.node.input.safeParse(input);
-    if (now) context.logDebug(context.node.refString("Input"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
-    if (!result.success) return { t: "Error", e: result.error };
-    return { t: "Data", d: result.data };
-  }
-
-  protected parseOutput(context: Context<Func<I, O, D, Type>>, output: z.infer<O>): { t: "Error"; e: Error } | { t: "Data"; d: z.infer<O> } {
-    if (!this.output) return { t: "Data", d: output };
-    const now = this.time ? Date.now() : 0;
-    const result = context.node.output.safeParse(output);
-    if (now) context.logDebug(context.node.refString("Output"), `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`);
-    if (!result.success) return { t: "Error", e: result.error };
-    return { t: "Data", d: result.data };
-  }
-}
-function emptyCancel() {}
-export class AsyncCbParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends CbParserWrapper<I, O, D, FunctionTypes["AsyncCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncCb"]>>,
-    input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["AsyncCb"]>,
-  ): FuncCbReturn<FunctionTypes["AsyncCb"]> {
-    const r = this.parseInput(context, input);
-    if (r.t === "Error") {
-      callback(r);
-      return;
+    if (this.input) {
+      input = WFParser.parseInput(context, this.time, input);
     }
-    input = r.d;
-    invokeStack.$(context, input, (res) => {
-      if (res.t === "Data") {
-        res = this.parseOutput(context, res.d);
-      }
-      callback(res);
-    });
-  }
-}
-export class AsyncCancelableCbParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends CbParserWrapper<I, O, D, FunctionTypes["AsyncCancelableCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCancelableCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncCancelableCb"]>>,
-    input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["AsyncCancelableCb"]>,
-  ): FuncCbReturn<FunctionTypes["AsyncCancelableCb"]> {
-    const r = this.parseInput(context, input);
-    if (r.t === "Error") {
-      callback(r);
-      return emptyCancel;
+    let promise = invokeStack.$(context, input);
+    if (this.output) {
+      promise = promise.then(WFParser.parseOutput.bind(WFParser, context, this.time));
     }
-    input = r.d;
-    return invokeStack.$(context, input, (res) => {
-      if (res.t === "Data") {
-        res = this.parseOutput(context, res.d);
-      }
-      callback(res);
-    });
+    return promise;
   }
-}
-export class SubsCbParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends CbParserWrapper<I, O, D, FunctionTypes["SubsCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["SubsCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["SubsCb"]>>,
+  override AsyncCb(
+    invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
+    context: Context<Func<I, O, D, "AsyncCb">>,
     input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["SubsCb"]>,
-  ): FuncCbReturn<FunctionTypes["SubsCb"]> {
-    const r = this.parseInput(context, input);
-    if (r.t === "Error") {
-      callback(r);
-      return;
+  ): AsyncCbReceiver<z.core.output<O>> {
+    if (this.input) {
+      input = WFParser.parseInput(context, this.time, input);
     }
-    input = r.d;
-    invokeStack.$(context, input, (res) => {
-      if (res.t === "Data") {
-        res = this.parseOutput(context, res.d);
-      }
-      callback(res);
-    });
+    let process = invokeStack.$(context, input);
+    if (this.output) {
+      process = process.pipeThen(WFParser.parseOutput.bind(WFParser, context, this.time));
+    }
+    return process;
   }
-}
-export class SubsCancelableCbParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends CbParserWrapper<I, O, D, FunctionTypes["SubsCancelableCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["SubsCancelableCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["SubsCancelableCb"]>>,
+  override SubsCb(
+    invokeStack: FuncInvokeStack<I, O, D, "SubsCb">,
+    context: Context<Func<I, O, D, "SubsCb">>,
     input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["SubsCancelableCb"]>,
-  ): FuncCbReturn<FunctionTypes["SubsCancelableCb"]> {
-    const r = this.parseInput(context, input);
-    if (r.t === "Error") {
-      callback(r);
-      return emptyCancel;
+  ): SubsCbReceiver<z.core.output<O>> {
+    if (this.input) {
+      input = WFParser.parseInput(context, this.time, input);
     }
-    input = r.d;
-    return invokeStack.$(context, input, (res) => {
-      if (res.t === "Data") {
-        res = this.parseOutput(context, res.d);
-      }
-      callback(res);
-    });
+    let process = invokeStack.$(context, input);
+    if (this.output) {
+      process = process.pipeEmit(WFParser.parseOutput.bind(WFParser, context, this.time));
+    }
+    return process;
+  }
+  override ShouldIgnore(_: Func<I, O, D, Type>): boolean {
+    return !this.input && !this.output;
   }
 }

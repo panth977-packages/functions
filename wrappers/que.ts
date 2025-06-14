@@ -4,26 +4,23 @@
  */
 import type z from "zod/v4";
 import {
-  type FuncCbHandler,
-  type FuncCbReturn,
   type FuncDeclaration,
   type FuncInput,
   type FuncInvokeStack,
   type FuncOutput,
-  type FunctionTypes,
   type FuncTypes,
-  FuncWrapper,
+  GenericFuncWrapper,
 } from "../functions/index.ts";
 import type { Context } from "../functions/context.ts";
 import type { Func } from "../functions/func.ts";
+import type { AsyncCbReceiver } from "../functions/handle_async.ts";
+import { AsyncCbSender } from "../exports.ts";
 
-abstract class CbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends FuncWrapper<I, O, D, Type> {
+export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
+  extends GenericFuncWrapper<I, O, D, Type> {
   protected que: Array<(cb: VoidFunction) => void> = [];
-  readonly maxConcurrency: number;
-  constructor(maxConcurrency = 1) {
+  constructor(readonly maxConcurrency = 1) {
     super();
-    this.maxConcurrency = maxConcurrency;
   }
   protected running = 0;
   protected runJob(): void {
@@ -36,61 +33,41 @@ abstract class CbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDe
       this.runJob();
     });
   }
-}
-
-export class AsyncFuncQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration> extends CbQue<I, O, D, FunctionTypes["AsyncFunc"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncFunc"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncFunc"]>>,
+  protected addJob(handler: (cb: VoidFunction) => void) {
+    this.que.push(handler);
+    this.runJob();
+  }
+  protected removeJob(handler: (cb: VoidFunction) => void) {
+    const index = this.que.indexOf(handler);
+    if (index !== -1) {
+      this.que.splice(index, 1);
+    }
+  }
+  override AsyncFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
+    context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
   ): Promise<z.core.output<O>> {
     return new Promise((resolve, reject) => {
-      this.que.push((done) => invokeStack.$(context, input).then(resolve, reject).then(done));
-      this.runJob();
+      this.addJob((done) => invokeStack.$(context, input).then(resolve, reject).then(done));
     });
   }
-}
-
-export class AsyncCbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration> extends CbQue<I, O, D, FunctionTypes["AsyncCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncCb"]>>,
+  override AsyncCb(
+    invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
+    context: Context<Func<I, O, D, "AsyncCb">>,
     input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["AsyncCb"]>,
-  ): FuncCbReturn<FunctionTypes["AsyncCb"]> {
-    this.que.push((cb) => {
-      invokeStack.$(context, input, (r) => {
-        cb();
-        callback(r);
-      });
-    });
-    this.runJob();
-  }
-}
-export class AsyncCancelableCbQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>
-  extends CbQue<I, O, D, FunctionTypes["AsyncCancelableCb"]> {
-  override implementation(
-    invokeStack: FuncInvokeStack<I, O, D, FunctionTypes["AsyncCancelableCb"]>,
-    context: Context<Func<I, O, D, FunctionTypes["AsyncCancelableCb"]>>,
-    input: z.core.output<I>,
-    callback: FuncCbHandler<O, FunctionTypes["AsyncCancelableCb"]>,
-  ): FuncCbReturn<FunctionTypes["AsyncCancelableCb"]> {
-    let cancel: FuncCbReturn<FunctionTypes["AsyncCancelableCb"]> | null = null;
-    const handler = (cb: VoidFunction) => {
-      cancel = invokeStack.$(context, input, (r) => {
-        cb();
-        callback(r);
-      });
-    };
-    this.que.push(handler);
-    this.runJob();
-    return () => {
-      const i = this.que.indexOf(handler);
-      if (i !== -1) {
-        this.que.splice(i, 1);
-      }
-      cancel?.();
-      cancel = null;
-    };
+  ): AsyncCbReceiver<z.core.output<O>> {
+    const port = new AsyncCbSender<z.infer<O>>();
+    invokeStack.$.bind(invokeStack, context, input);
+    function handler(done: VoidFunction) {
+      const process = invokeStack.$(context, input);
+      process.finally(done);
+      process.then(port.return.bind(port));
+      process.catch(port.throw.bind(port));
+      port.on("cancel", process.cancel.bind(process));
+    }
+    port.on("cancel", this.removeJob.bind(this, handler));
+    this.addJob(handler);
+    return port.getHandler();
   }
 }
