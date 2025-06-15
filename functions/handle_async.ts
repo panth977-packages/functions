@@ -2,39 +2,56 @@ export class AsyncCbSender<OT> {
   protected cancels?: VoidFunction[] = [];
   protected handler?: AsyncCbReceiver<OT> = new AsyncCbReceiver(this);
   protected wasCanceled?: boolean;
+  get isCanceled(): boolean {
+    return this.wasCanceled === true;
+  }
+  static catchErrors?: (error: unknown) => void;
+  protected static onError(error: unknown) {
+    if (this.catchErrors === undefined) return;
+    try {
+      this.catchErrors(error);
+    } catch (error) {
+      console.error(error);
+    }
+  }
   getHandler(): AsyncCbReceiver<OT> {
     if (this.handler === undefined) throw new Error("Handler was removed, possibly because the sender was closed!");
     return this.handler;
   }
-  protected close(): void {
+  protected shrinkMemory(): void {
     delete this.handler;
     delete this.cancels;
   }
   static cancel<OT>(callback: AsyncCbSender<OT>): void {
     callback.wasCanceled = true;
     if (callback.cancels === undefined) return;
-    const { cancels } = callback;
-    callback.close();
-    for (const cb of cancels) {
-      cb();
+    for (const cb of callback.cancels) {
+      try {
+        cb();
+      } catch (error) {
+        AsyncCbSender.onError(error);
+      }
     }
+    callback.shrinkMemory();
   }
   return(data: OT): void {
     if (this.handler === undefined) return;
-    const { handler } = this;
-    this.close();
-    AsyncCbReceiver.resolve(handler, data);
+    AsyncCbReceiver.resolve(this.handler, data);
+    this.shrinkMemory();
   }
   throw(error: unknown): void {
     if (this.handler === undefined) return;
-    const { handler } = this;
-    this.close();
-    AsyncCbReceiver.reject(handler, error);
+    AsyncCbReceiver.reject(this.handler, error);
+    this.shrinkMemory();
   }
   set onCancel(cb: VoidFunction | null) {
     if (this.wasCanceled) {
-      cb?.();
-      this.return;
+      try {
+        cb?.();
+      } catch (error) {
+        AsyncCbSender.onError(error);
+      }
+      return;
     }
     if (this.cancels === undefined) return;
     if (cb === null) {
@@ -45,8 +62,12 @@ export class AsyncCbSender<OT> {
   }
   on(event: "cancel", cb: VoidFunction): void {
     if (this.wasCanceled) {
-      cb();
-      this.return;
+      try {
+        cb();
+      } catch (error) {
+        AsyncCbSender.onError(error);
+      }
+      return;
     }
     if (event !== "cancel") throw new Error("Unknown Event found");
     if (this.cancels === undefined) return;
@@ -70,10 +91,19 @@ export class AsyncCbReceiver<OT> {
   protected thens?: ((data: OT) => void)[] = [];
   protected catches?: ((error: unknown) => void)[] = [];
   protected finales?: (() => void)[] = [];
+  static catchErrors?: (error: unknown) => void;
+  protected static onError(error: unknown) {
+    if (this.catchErrors === undefined) return;
+    try {
+      this.catchErrors(error);
+    } catch (error) {
+      console.error(error);
+    }
+  }
   constructor(callback?: AsyncCbSender<OT>) {
     this.callback = callback;
   }
-  protected close(): void {
+  protected shrinkMemory(): void {
     delete this.callback;
     delete this.thens;
     delete this.catches;
@@ -81,41 +111,53 @@ export class AsyncCbReceiver<OT> {
   static resolve<OT>(handler: AsyncCbReceiver<OT>, data: OT): void {
     if (handler.thens === undefined) return;
     handler.result = [1, data];
-    const { thens, finales } = handler;
-    handler.close();
-    try {
-      for (const cb of thens) {
+    for (const cb of handler.thens) {
+      try {
         cb(data);
+      } catch (error) {
+        AsyncCbReceiver.onError(error);
       }
-    } finally {
-      if (finales !== undefined) {
-        for (const cb of finales) {
+    }
+    if (handler.finales !== undefined) {
+      for (const cb of handler.finales) {
+        try {
           cb();
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
         }
       }
     }
+    handler.shrinkMemory();
   }
   static reject<OT>(handler: AsyncCbReceiver<OT>, error: unknown): void {
     if (handler.catches === undefined) return;
     handler.result = [2, error];
-    const { catches, finales } = handler;
-    handler.close();
-    try {
-      for (const cb of catches) {
+    for (const cb of handler.catches) {
+      try {
         cb(error);
+      } catch (error) {
+        AsyncCbReceiver.onError(error);
       }
-    } finally {
-      if (finales !== undefined) {
-        for (const cb of finales) {
+    }
+    if (handler.finales !== undefined) {
+      for (const cb of handler.finales) {
+        try {
           cb();
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
         }
       }
     }
+    handler.shrinkMemory();
   }
   then(cb: (data: OT) => void): this {
     if (this.thens === undefined) {
       if (this.result[0] === 1) {
-        cb(this.result[1]);
+        try {
+          cb(this.result[1]);
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
+        }
       }
       return this;
     }
@@ -125,7 +167,11 @@ export class AsyncCbReceiver<OT> {
   catch(cb: (error: unknown) => void): this {
     if (this.catches === undefined) {
       if (this.result[0] === 2) {
-        cb(this.result[1]);
+        try {
+          cb(this.result[1]);
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
+        }
       }
       return this;
     }
@@ -135,7 +181,11 @@ export class AsyncCbReceiver<OT> {
   finally(cb: () => void): this {
     if (this.finales === undefined) {
       if (this.result[0] !== 0) {
-        cb();
+        try {
+          cb();
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
+        }
       }
       return this;
     }
@@ -145,32 +195,35 @@ export class AsyncCbReceiver<OT> {
   cancel(): void {
     if (this.callback === undefined) return;
     this.result = [3];
-    const { callback, finales } = this;
-    this.close();
     try {
-      AsyncCbSender.cancel(callback);
-    } finally {
-      if (finales !== undefined) {
-        for (const cb of finales) {
+      AsyncCbSender.cancel(this.callback);
+    } catch (error) {
+      AsyncCbReceiver.onError(error);
+    }
+    if (this.finales !== undefined) {
+      for (const cb of this.finales) {
+        try {
           cb();
+        } catch (error) {
+          AsyncCbReceiver.onError(error);
         }
       }
     }
+    this.shrinkMemory();
   }
 
   private static _pipeThen<OT, NT>(cb: (data: OT) => NT, port: AsyncCbSender<NT>, data: OT): void {
     let result;
     try {
       result = cb(data);
+      port.return(result);
     } catch (err) {
       port.throw(err);
-      return;
     }
-    port.return(result);
   }
   pipeThen<NT>(cb: (data: OT) => NT): AsyncCbReceiver<NT> {
     const port = new AsyncCbSender<NT>();
-    this.then((AsyncCbReceiver._pipeThen as (cb: (data: OT) => NT, port: AsyncCbSender<NT>, data: OT) => void).bind(AsyncCbReceiver, cb, port));
+    this.then((AsyncCbReceiver._pipeThen<OT, NT>).bind(AsyncCbReceiver, cb, port));
     this.catch(port.throw.bind(port));
     return port.getHandler();
   }
@@ -178,44 +231,30 @@ export class AsyncCbReceiver<OT> {
     let result;
     try {
       result = cb(error);
+      port.return(result);
     } catch (err) {
       port.throw(err);
-      return;
     }
-    port.return(result);
   }
   pipeCatch<NT>(cb: (error: unknown) => NT): AsyncCbReceiver<NT | OT> {
     const port = new AsyncCbSender<NT | OT>();
     this.then(port.return.bind(port));
-    this.catch(
-      (AsyncCbReceiver._pipeCatch as (cb: (error: unknown) => NT, port: AsyncCbSender<NT | OT>, error: unknown) => void).bind(
-        AsyncCbReceiver,
-        cb,
-        port,
-      ),
-    );
+    this.catch((AsyncCbReceiver._pipeCatch<OT, NT>).bind(AsyncCbReceiver, cb, port));
     return port.getHandler();
   }
   private static _pipe<OT, NT>(pipe: (data: OT) => AsyncCbReceiver<NT>, port: AsyncCbSender<NT>, data: OT): void {
     let process;
     try {
       process = pipe(data);
+      process.then(port.return.bind(port));
+      process.catch(port.throw.bind(port));
     } catch (err) {
       port.throw(err);
-      return;
     }
-    process.then(port.return.bind(port));
-    process.catch(port.throw.bind(port));
   }
   pipe<NT>(pipe: (data: OT) => AsyncCbReceiver<NT>): AsyncCbReceiver<NT> {
     const port = new AsyncCbSender<NT>();
-    this.then(
-      (AsyncCbReceiver._pipe as (pipe: (data: OT) => AsyncCbReceiver<NT>, port: AsyncCbSender<NT>, data: OT) => void).bind(
-        AsyncCbReceiver,
-        pipe,
-        port,
-      ),
-    );
+    this.then((AsyncCbReceiver._pipe<OT, NT>).bind(AsyncCbReceiver, pipe, port));
     this.catch(port.throw.bind(port));
     return port.getHandler();
   }
@@ -271,8 +310,8 @@ export class AsyncCbReceiver<OT> {
   static fromPromise<T>(promise: Promise<T>): AsyncCbReceiver<T> {
     const handler = new AsyncCbReceiver<T>();
     promise
-      .then((AsyncCbReceiver.resolve as ((handler: AsyncCbReceiver<T>, data: T) => void)).bind(AsyncCbReceiver, handler))
-      .catch((AsyncCbReceiver.reject as ((handler: AsyncCbReceiver<T>, error: unknown) => void)).bind(AsyncCbReceiver, handler));
+      .then((AsyncCbReceiver.resolve<T>).bind(AsyncCbReceiver, handler))
+      .catch((AsyncCbReceiver.reject<T>).bind(AsyncCbReceiver, handler));
     return handler;
   }
   promisified(): Promise<OT> {
@@ -282,13 +321,3 @@ export class AsyncCbReceiver<OT> {
   }
 }
 export type AwaitedCb<T> = T extends AsyncCbReceiver<infer R> ? R : never;
-
-// declare global {
-//   interface Promise<T> {
-//     toAsyncCb(): AsyncCbReceiver<T>;
-//   }
-// }
-
-// Promise.prototype.toAsyncCb = function (this) {
-//   return AsyncCbReceiver.fromPromise(this);
-// };

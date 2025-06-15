@@ -6,6 +6,7 @@ import { z } from "zod/v4";
 import { Context } from "./context.ts";
 import { AsyncCbReceiver } from "./handle_async.ts";
 import { SubsCbReceiver } from "./handle_subs.ts";
+import { AsyncCbSender, SubsCbSender } from "../exports.ts";
 
 export const unimplementedSchema: z.ZodNever = z.never();
 
@@ -121,7 +122,7 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
   ): InstanceType<W>[] {
     const w: InstanceType<W>[] = [];
     for (const x of func.wrappers) {
-      if (x instanceof (wrapperClass as any)) {
+      if (x instanceof wrapperClass) {
         w.push(x as InstanceType<W>);
       }
     }
@@ -221,6 +222,15 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
     }
     return Object.assign(build, { node: this });
   }
+  createPort(): Type extends "AsyncCb" ? AsyncCbSender<z.infer<O>> : Type extends "SubsCb" ? SubsCbSender<z.infer<O>> : never {
+    if (this.type === "AsyncCb") {
+      return new AsyncCbSender() as never;
+    } else if (this.type === "SubsCb") {
+      return new SubsCbSender() as never;
+    } else {
+      throw new Error(`Unsupported function type: ${this.type}`);
+    }
+  }
 }
 /**
  * Base Func Builder, Use this to build a Func Node
@@ -280,7 +290,7 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
  * const fib = syncFunc()
  *   .$input(z.number().int().positive())
  *   .$output(z.number().int().positive())
- *   .$wrap(new SyncFuncMemo())
+ *   .$wrap(new WFMemo())
  *   .$((context, input) => {
  *     if (input < 3) return 1;
  *     return fib(context, input - 1) + fib(context, input - 2);
@@ -304,8 +314,8 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, ne
  * const fetchUser = asyncFunc()
  *   .$input(z.number().int().positive())
  *   .$output(z.object({name: z.string(), age: z.number().int().positive(), ...}))
- *   .$wrap(new AsyncFuncParser({output: false}))
- *   .$wrap(new AsyncFuncMemo())
+ *   .$wrap(new WFParser({output: false}))
+ *   .$wrap(new WFMemo())
  *   .$(async (context, input) => {
  *     const query = `SELECT name, age FROM users WHERE id = $1`;
  *     const result = await pg.query(query, [input]);
@@ -331,8 +341,8 @@ export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, n
  * const fetchUser = asyncCb()
  *   .$input(z.number().int().positive())
  *   .$output(z.object({name: z.string(), age: z.number().int().positive(), ...}))
- *   .$wrap(new AsyncCbParser({output: false}))
- *   .$wrap(new AsyncCbMemo())
+ *   .$wrap(new WFParser({output: false}))
+ *   .$wrap(new WFMemo())
  *   .$((context, input) => {
  *     const port = new AsyncCbSender<typeof fetchUser.output>();
  *     const query = `SELECT name, age FROM users WHERE id = $1`;
@@ -361,9 +371,9 @@ export function asyncCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, nev
  * const listenUserChanges = subsCb()
  *   .$input(z.number().int().positive())
  *   .$output(z.object({name: z.string(), age: z.number().int().positive(), ...}))
- *   .$wrap(new SubsCbParser({output: false}))
+ *   .$wrap(new WFParser({output: false}))
  *   .$((context, input) => {
- *     const port = new SubsCbSender<typeof listenUserChanges.output>();
+ *     const port = context.node.createPort();
  *     const client = new Mqtt({...});
  *     client.on('message', (topic, message) => {
  *       port.yield(JSON.parse(message.toString()));
@@ -376,9 +386,9 @@ export function asyncCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, nev
  *     return port.getHandler();
  *   });
  * const context = new Context(null, "No Reason", null);
- * const listner = listenUserChanges(context, 10);
- * listner.onEmit = console.log;
- * setTimeout(listner.cancel.bind(listner), 1000 * 3600);
+ * const process = listenUserChanges(context, 10);
+ * process.listen(console.log).startFlush();
+ * setTimeout(process.cancel.bind(process), 1000 * 3600);
  * ```
  */
 export function subsCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "SubsCb"> {
