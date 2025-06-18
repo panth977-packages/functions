@@ -69,7 +69,7 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     }
     let promise = invokeStack.$(context, input);
     if (this.output) {
-      promise = promise.then(WFParser.parseOutput.bind(WFParser, context, this.time));
+      promise = promise.then((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
     }
     return promise;
   }
@@ -83,7 +83,7 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     }
     let process = invokeStack.$(context, input);
     if (this.output) {
-      process = process.pipeThen(WFParser.parseOutput.bind(WFParser, context, this.time));
+      process = process.pipeThen((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
     }
     return process;
   }
@@ -97,7 +97,7 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     }
     let process = invokeStack.$(context, input);
     if (this.output) {
-      process = process.pipeEmit(WFParser.parseOutput.bind(WFParser, context, this.time));
+      process = process.pipeEmit((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
     }
     return process;
   }
