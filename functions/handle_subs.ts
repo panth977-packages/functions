@@ -185,10 +185,11 @@ export class SubsCbReceiver<OT> {
     SubsCbReceiver.end(handler);
     return handler;
   }
-  listen(listener: (data: OT) => void) {
-    if (this.result[0] !== 0) return;
-    if (this.listeners === undefined) return;
+  listen(listener: (data: OT) => void): this {
+    if (this.result[0] !== 0) return this;
+    if (this.listeners === undefined) return this;
     this.listeners.push(listener);
+    return this;
   }
   startFlush(): this {
     if (this.emitHistory === undefined || this.listeners === undefined) return this;

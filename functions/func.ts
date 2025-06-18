@@ -49,31 +49,31 @@ export abstract class FuncWrapper<I extends FuncInput, O extends FuncOutput, D e
 }
 
 export abstract class GenericFuncWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> {
-  SyncFunc?(
+  protected SyncFunc?(
     invokeStack: FuncInvokeStack<I, O, D, "SyncFunc">,
     context: Context<Func<I, O, D, "SyncFunc">>,
     input: z.infer<I>,
   ): FuncReturn<O, "SyncFunc">;
-  AsyncFunc?(
+  protected AsyncFunc?(
     invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.infer<I>,
   ): FuncReturn<O, "AsyncFunc">;
-  AsyncCb?(
+  protected AsyncCb?(
     invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
     context: Context<Func<I, O, D, "AsyncCb">>,
     input: z.infer<I>,
   ): FuncReturn<O, "AsyncCb">;
-  SubsCb?(
+  protected SubsCb?(
     invokeStack: FuncInvokeStack<I, O, D, "SubsCb">,
     context: Context<Func<I, O, D, "SubsCb">>,
     input: z.infer<I>,
   ): FuncReturn<O, "SubsCb">;
-  ShouldIgnore?(func: Func<I, O, D, Type>): boolean;
+  protected ShouldIgnore?(func: Func<I, O, D, Type>): boolean;
   private ByPassImplementation(invokeStack: FuncInvokeStack<I, O, D, Type>, context: Context, input: z.infer<I>): FuncReturn<O, Type> {
     return invokeStack.$(context, input);
   }
-  optimize(func: Func<I, O, D, Type>): void {
+  protected optimize(func: Func<I, O, D, Type>): void {
     if (this.ShouldIgnore?.(func) ?? false) {
       this.implementation = this.ByPassImplementation;
       return;
