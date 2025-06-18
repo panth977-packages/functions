@@ -1,16 +1,16 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:zod@^3.25.0": "3.25.42"
+    "npm:zod@^3.25.67": "3.25.67"
   },
   "npm": {
-    "zod@3.25.42": {
-      "integrity": "sha512-PcALTLskaucbeHc41tU/xfjfhcz8z0GdhhDcSgrCTmSazUuqnYqiXO63M0QUBVwpBlsLsNVn5qHSC5Dw3KZvaQ=="
+    "zod@3.25.67": {
+      "integrity": "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="
     }
   },
   "workspace": {
     "dependencies": [
-      "npm:zod@^3.25.0"
+      "npm:zod@^3.25.67"
     ]
   }
 }
