@@ -47,7 +47,7 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     return process;
   }
   private streamOnNext(
-    context: Context<Func<I, O, D, "SreamFunc">>,
+    context: Context<Func<I, O, D, "StreamFunc">>,
     t: ReturnType<typeof WFTimer.logInit>,
     i: number,
     process: T.PStream<z.core.output<O>>,
@@ -56,9 +56,9 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     WFTimer.logNextEvent(context, `StreamYield-${i}`, t);
     process.onnext(this.streamOnNext.bind(this, context, t, i + 1, process));
   }
-  protected override SreamFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "SreamFunc">,
-    context: Context<Func<I, O, D, "SreamFunc">>,
+  protected override StreamFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "StreamFunc">,
+    context: Context<Func<I, O, D, "StreamFunc">>,
     input: z.core.output<I>,
   ): T.PStream<z.core.output<O>> {
     const t = WFTimer.logInit(context);

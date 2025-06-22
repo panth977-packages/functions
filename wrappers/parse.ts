@@ -72,9 +72,9 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     }
     return promise;
   }
-  protected override SreamFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "SreamFunc">,
-    context: Context<Func<I, O, D, "SreamFunc">>,
+  protected override StreamFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "StreamFunc">,
+    context: Context<Func<I, O, D, "StreamFunc">>,
     input: z.core.output<I>,
   ): T.PStream<z.core.output<O>> {
     if (this.input) {
@@ -82,7 +82,7 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     }
     const process = invokeStack.$(context, input);
     if (this.output) {
-      return process.map((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time)) as never;
+      return process.map((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time), process.cancel.bind(process));
     }
     return process;
   }

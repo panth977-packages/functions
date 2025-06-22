@@ -9,7 +9,7 @@ import { T } from "@panth977/tools";
 export const unimplementedSchema: z.ZodNever = z.never();
 
 /** All supported function types */
-export type FuncTypes = "SyncFunc" | "AsyncFunc" | "SreamFunc";
+export type FuncTypes = "SyncFunc" | "AsyncFunc" | "StreamFunc";
 /** Default Func Input Schema */
 export type FuncInput = z.ZodType;
 /** Default Func Output Schema */
@@ -19,7 +19,7 @@ export type FuncDeclaration = Record<any, any>;
 /** Default Func Return Type */
 export type FuncReturn<O extends FuncOutput, Type extends FuncTypes> = Type extends "SyncFunc" ? z.infer<O>
   : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
-  : Type extends "SreamFunc" ? T.PStream<z.infer<O>>
+  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
   : never;
 export type FuncExposed<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> = (
   context: Context,
@@ -63,11 +63,11 @@ export abstract class GenericFuncWrapper<I extends FuncInput, O extends FuncOutp
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.infer<I>,
   ): FuncReturn<O, "AsyncFunc">;
-  protected SreamFunc?(
-    invokeStack: FuncInvokeStack<I, O, D, "SreamFunc">,
-    context: Context<Func<I, O, D, "SreamFunc">>,
+  protected StreamFunc?(
+    invokeStack: FuncInvokeStack<I, O, D, "StreamFunc">,
+    context: Context<Func<I, O, D, "StreamFunc">>,
     input: z.infer<I>,
-  ): FuncReturn<O, "SreamFunc">;
+  ): FuncReturn<O, "StreamFunc">;
   protected ShouldIgnore?(func: Func<I, O, D, Type>): boolean;
   private ByPassImplementation(invokeStack: FuncInvokeStack<I, O, D, Type>, context: Context, input: z.infer<I>): FuncReturn<O, Type> {
     return invokeStack.$(context, input);
@@ -174,9 +174,9 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
       }
     };
   }
-  static buildSreamFunc<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
-    func: Func<I, O, D, "SreamFunc">,
-  ): FuncExposed<I, O, "SreamFunc"> {
+  static buildStreamFunc<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
+    func: Func<I, O, D, "StreamFunc">,
+  ): FuncExposed<I, O, "StreamFunc"> {
     return (context, input) => {
       const childContext = new Context(context, func.refString(), func);
       try {
@@ -197,19 +197,19 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
       build = Func.buildAsyncFunc(this as any);
     } else if (this.type === "SyncFunc") {
       build = Func.buildSyncFunc(this as any);
-    } else if (this.type === "SreamFunc") {
-      build = Func.buildSreamFunc(this as any);
+    } else if (this.type === "StreamFunc") {
+      build = Func.buildStreamFunc(this as any);
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
     }
     return Object.assign(build, { node: this });
   }
   createPort(cancelable = true): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
-    : Type extends "SreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+    : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
     : never {
     if (this.type === "AsyncFunc") {
       return T.$async(cancelable) as never;
-    } else if (this.type === "SreamFunc") {
+    } else if (this.type === "StreamFunc") {
       return T.$stream() as never;
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
@@ -411,6 +411,6 @@ export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, n
  * setTimeout(process.cancel.bind(process), 1000 * 3600);
  * ```
  */
-export function subsCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "SreamFunc"> {
-  return new FuncBuilder("SreamFunc", unimplementedSchema, unimplementedSchema, {}, [], { namespace: "Unknown", name: "Unknown" });
+export function subsCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "StreamFunc"> {
+  return new FuncBuilder("StreamFunc", unimplementedSchema, unimplementedSchema, {}, [], { namespace: "Unknown", name: "Unknown" });
 }
