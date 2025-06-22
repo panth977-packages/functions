@@ -270,6 +270,14 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
       return T.PPromise.reject(err);
     }
   }
+  protected toFuncTypes(
+    implementation: BuilderImplementation<I, O, D, Type>,
+  ): [BuilderToFuncType<Type>, FuncImplementation<I, O, D, BuilderToFuncType<Type>>] {
+    if (this.type === "AsyncLike") {
+      return ["AsyncFunc", (FuncBuilder._promised<I, O, D>).bind(FuncBuilder, implementation as never)] as never;
+    }
+    return [this.type, implementation] as never;
+  }
   $(
     implementation: BuilderImplementation<I, O, D, Type>,
   ): FuncExported<I, O, D, BuilderToFuncType<Type>> {
@@ -279,27 +287,16 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
     if ((this.output as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Output Schema!");
     }
-    if (this.type === "AsyncLike") {
-      return new Func(
-        "AsyncFunc" as never,
-        this.input,
-        this.output,
-        this.declaration,
-        this.wrappers as never,
-        (FuncBuilder._promised<I, O, D>).bind(FuncBuilder, implementation as never),
-        this.ref,
-      )
-        .create() as never;
-    }
+    const [type, funcImp] = this.toFuncTypes(implementation);
     return new Func(
-      this.type,
+      type,
       this.input,
       this.output,
       this.declaration,
       this.wrappers,
-      implementation as never,
+      funcImp,
       this.ref,
-    ).create() as never;
+    ).create();
   }
 }
 
