@@ -13,8 +13,7 @@ import {
 } from "../functions/index.ts";
 import type { Context } from "../functions/context.ts";
 import type { Func } from "../functions/func.ts";
-import type { AsyncCbReceiver } from "../functions/handle_async.ts";
-import { AsyncCbSender } from "../exports.ts";
+import type { T } from "@panth977/tools";
 
 export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
   extends GenericFuncWrapper<I, O, D, Type> {
@@ -43,31 +42,29 @@ export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDecl
       this.que.splice(index, 1);
     }
   }
+  private handler(
+    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
+    context: Context<Func<I, O, D, "AsyncFunc">>,
+    input: z.core.output<I>,
+    port: T.PPromisePort<z.core.output<O>>,
+    done: VoidFunction,
+  ) {
+    const process = invokeStack.$(context, input);
+    process.onend(done);
+    process.ondata(port.return);
+    process.onerror(port.throw);
+    port.oncancel(process.cancel.bind(process));
+  }
   override AsyncFunc(
     invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
-  ): Promise<z.core.output<O>> {
-    return new Promise((resolve, reject) => {
-      this.addJob((done) => invokeStack.$(context, input).then(resolve, reject).then(done));
-    });
-  }
-  override AsyncCb(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
-    context: Context<Func<I, O, D, "AsyncCb">>,
-    input: z.core.output<I>,
-  ): AsyncCbReceiver<z.core.output<O>> {
-    const port = new AsyncCbSender<z.infer<O>>();
+  ): T.PPromise<z.core.output<O>> {
+    const [port, promise] = context.node.createPort();
     invokeStack.$.bind(invokeStack, context, input);
-    function handler(done: VoidFunction) {
-      const process = invokeStack.$(context, input);
-      process.finally(done);
-      process.then(port.return.bind(port));
-      process.catch(port.throw.bind(port));
-      port.on("cancel", process.cancel.bind(process));
-    }
-    port.on("cancel", this.removeJob.bind(this, handler));
+    const handler = this.handler.bind(this, invokeStack, context, input, port);
+    port.oncancel(this.removeJob.bind(this, handler));
     this.addJob(handler);
-    return port.getHandler();
+    return promise;
   }
 }

@@ -3,19 +3,10 @@
  * @module
  */
 import type z from "zod/v4";
-import {
-  type AsyncCbReceiver,
-  AsyncCbSender,
-  type FuncDeclaration,
-  type FuncInput,
-  type FuncOutput,
-  type FuncTypes,
-  GenericFuncWrapper,
-  type SubsCbReceiver,
-  SubsCbSender,
-} from "../functions/index.ts";
+import { type FuncDeclaration, type FuncInput, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../functions/index.ts";
 import type { Context } from "../functions/context.ts";
 import type { Func, FuncInvokeStack } from "../functions/func.ts";
+import type { T } from "@panth977/tools";
 
 export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
   extends GenericFuncWrapper<I, O, D, Type> {
@@ -46,46 +37,38 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
-  ): Promise<z.core.output<O>> {
-    const t = WFTimer.logInit(context);
-    const _output = invokeStack.$(context, input);
-    WFTimer.logNextEvent(context, "SyncCompleted", t);
-    _output.then(WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCompleted", t));
-    return _output;
-  }
-  override AsyncCb(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
-    context: Context<Func<I, O, D, "AsyncCb">>,
-    input: z.core.output<I>,
-  ): AsyncCbReceiver<z.core.output<O>> {
+  ): T.PPromise<z.core.output<O>> {
     const t = WFTimer.logInit(context);
     const process = invokeStack.$(context, input);
     WFTimer.logNextEvent(context, "SyncCompleted", t);
-    const port = new AsyncCbSender<z.infer<O>>();
-    process.then(WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCbCompleted", t));
-    process.then(port.return.bind(port));
-    process.catch(port.throw.bind(port));
-    port.on("cancel", WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCancelled", t));
-    port.on("cancel", process.cancel.bind(process));
-    return port.getHandler();
+    process.ondata(WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCompleted", t));
+    process.onerror(WFTimer.logNextEvent.bind(WFTimer, context, "AsyncError", t));
+    process.oncancel(WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCancel", t));
+    return process;
   }
-  override SubsCb(
-    invokeStack: FuncInvokeStack<I, O, D, "SubsCb">,
-    context: Context<Func<I, O, D, "SubsCb">>,
+  private streamOnNext(
+    context: Context<Func<I, O, D, "SreamFunc">>,
+    t: ReturnType<typeof WFTimer.logInit>,
+    i: number,
+    process: T.PStream<z.core.output<O>>,
+    _data: z.infer<O>,
+  ) {
+    WFTimer.logNextEvent(context, `StreamYield-${i}`, t);
+    process.onnext(this.streamOnNext.bind(this, context, t, i + 1, process));
+  }
+  protected override SreamFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "SreamFunc">,
+    context: Context<Func<I, O, D, "SreamFunc">>,
     input: z.core.output<I>,
-  ): SubsCbReceiver<z.core.output<O>> {
+  ): T.PStream<z.core.output<O>> {
     const t = WFTimer.logInit(context);
     const process = invokeStack.$(context, input);
     WFTimer.logNextEvent(context, "SyncCompleted", t);
-    const port = new SubsCbSender<z.infer<O>>();
-    process.listen(WFTimer.logNextEvent.bind(WFTimer, context, "SubsCbYielded", t));
-    process.listen(port.yield.bind(port));
-    process.catch(port.throw.bind(port));
-    process.onEnd(WFTimer.logNextEvent.bind(WFTimer, context, "SubsCbEnded", t));
-    process.onEnd(port.end.bind(port));
-    port.on("cancel", WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCancelled", t));
-    port.on("cancel", process.cancel.bind(process));
-    return port.getHandler();
+    process.onnext(this.streamOnNext.bind(this, context, t, 0, process));
+    process.onerror(WFTimer.logNextEvent.bind(WFTimer, context, "StreamError", t));
+    process.oncancel(WFTimer.logNextEvent.bind(WFTimer, context, "StreamCancel", t));
+    process.onfinish(WFTimer.logNextEvent.bind(WFTimer, context, "StreamComplete", t));
+    return process;
   }
   override ShouldIgnore(_: Func<I, O, D, Type>): boolean {
     return !this.time;

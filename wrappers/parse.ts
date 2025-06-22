@@ -13,8 +13,7 @@ import {
 } from "../functions/index.ts";
 import type { Context } from "../functions/context.ts";
 import type { Func } from "../functions/func.ts";
-import type { AsyncCbReceiver } from "../functions/handle_async.ts";
-import type { SubsCbReceiver } from "../functions/handle_subs.ts";
+import type { T } from "@panth977/tools";
 
 export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
   extends GenericFuncWrapper<I, O, D, Type> {
@@ -63,41 +62,27 @@ export class WFParser<I extends FuncInput, O extends FuncOutput, D extends FuncD
     invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
-  ): Promise<z.core.output<O>> {
+  ): T.PPromise<z.core.output<O>> {
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }
-    let promise = invokeStack.$(context, input);
+    const promise = invokeStack.$(context, input);
     if (this.output) {
-      promise = promise.then((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
+      return promise.then((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
     }
     return promise;
   }
-  override AsyncCb(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncCb">,
-    context: Context<Func<I, O, D, "AsyncCb">>,
+  protected override SreamFunc(
+    invokeStack: FuncInvokeStack<I, O, D, "SreamFunc">,
+    context: Context<Func<I, O, D, "SreamFunc">>,
     input: z.core.output<I>,
-  ): AsyncCbReceiver<z.core.output<O>> {
+  ): T.PStream<z.core.output<O>> {
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }
-    let process = invokeStack.$(context, input);
+    const process = invokeStack.$(context, input);
     if (this.output) {
-      process = process.pipeThen((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
-    }
-    return process;
-  }
-  override SubsCb(
-    invokeStack: FuncInvokeStack<I, O, D, "SubsCb">,
-    context: Context<Func<I, O, D, "SubsCb">>,
-    input: z.core.output<I>,
-  ): SubsCbReceiver<z.core.output<O>> {
-    if (this.input) {
-      input = WFParser.parseInput(context, this.time, input);
-    }
-    let process = invokeStack.$(context, input);
-    if (this.output) {
-      process = process.pipeEmit((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time));
+      return process.map((WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time)) as never;
     }
     return process;
   }
