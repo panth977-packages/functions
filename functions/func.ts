@@ -328,7 +328,7 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, ne
  * Base Func Builder for asynchronous functions
  * @example
  * ```ts
- * const fetchUser = asyncPromise()
+ * const fetchUser = asyncLike()
  *   .$input(z.number().int().positive())
  *   .$output(z.object({name: z.string(), age: z.number().int().positive(), ...}))
  *   .$wrap(new WFParser({output: false}))
@@ -344,7 +344,7 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, ne
  * console.log(user10);
  * ```
  */
-export function asyncPromise(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "AsyncLike"> {
+export function asyncLike(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "AsyncLike"> {
   return new FuncBuilder("AsyncLike", unimplementedSchema, unimplementedSchema, {}, [], {
     namespace: "Unknown",
     name: "Unknown",
