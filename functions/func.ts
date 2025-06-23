@@ -17,42 +17,70 @@ export type FuncOutput = z.ZodType;
 /** Default Func Declaration */
 export type FuncDeclaration = Record<any, any>;
 /** Default Func Return Type */
-export type FuncReturn<O extends FuncOutput, Type extends FuncTypes> = Type extends "SyncFunc" ? z.infer<O>
-  : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
-  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
-  : never;
-export type FuncExposed<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> = (
-  context: Context,
-  input: z.infer<I>,
-) => FuncReturn<O, Type>;
-export type FuncImplementation<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> = (
+export type FuncReturn<
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> = Type extends "SyncFunc"
+  ? z.infer<O>
+  : Type extends "AsyncFunc"
+    ? T.PPromise<z.infer<O>>
+    : Type extends "StreamFunc"
+      ? T.PStream<z.infer<O>>
+      : never;
+export type FuncExposed<
+  I extends FuncInput,
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> = (context: Context, input: z.infer<I>) => FuncReturn<O, Type>;
+export type FuncImplementation<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> = (
   context: Context<Func<I, O, D, Type>>,
   input: z.infer<I>,
 ) => FuncReturn<O, Type>;
-export type FuncExported<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> = FuncExposed<I, O, Type> & {
+export type FuncExported<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> = FuncExposed<I, O, Type> & {
   node: Func<I, O, D, Type>;
   output: z.infer<O>;
   input: z.infer<I>;
 };
 
 /** Base Func Wrapper */
-export abstract class FuncWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> {
+export abstract class FuncWrapper<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> {
   abstract implementation(
     invokeStack: FuncInvokeStack<I, O, D, Type>,
     context: Context,
     input: z.infer<I>,
   ): ReturnType<FuncImplementation<I, O, D, Type>>;
   protected optimize(_: Func<I, O, D, Type>) {}
-  static optimize<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>(
-    func: Func<I, O, D, Type>,
-    wrapper: FuncWrapper<I, O, D, Type>,
-  ) {
+  static optimize<
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+    Type extends FuncTypes,
+  >(func: Func<I, O, D, Type>, wrapper: FuncWrapper<I, O, D, Type>) {
     wrapper.optimize(func);
   }
 }
 
-export abstract class GenericFuncWrapper<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends FuncWrapper<I, O, D, Type> {
+export abstract class GenericFuncWrapper<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> extends FuncWrapper<I, O, D, Type> {
   protected SyncFunc?(
     invokeStack: FuncInvokeStack<I, O, D, "SyncFunc">,
     context: Context<Func<I, O, D, "SyncFunc">>,
@@ -69,7 +97,11 @@ export abstract class GenericFuncWrapper<I extends FuncInput, O extends FuncOutp
     input: z.infer<I>,
   ): FuncReturn<O, "StreamFunc">;
   protected ShouldIgnore?(func: Func<I, O, D, Type>): boolean;
-  private ByPassImplementation(invokeStack: FuncInvokeStack<I, O, D, Type>, context: Context, input: z.infer<I>): FuncReturn<O, Type> {
+  private ByPassImplementation(
+    invokeStack: FuncInvokeStack<I, O, D, Type>,
+    context: Context,
+    input: z.infer<I>,
+  ): FuncReturn<O, Type> {
     return invokeStack.$(context, input);
   }
   protected override optimize(func: Func<I, O, D, Type>): void {
@@ -77,31 +109,47 @@ export abstract class GenericFuncWrapper<I extends FuncInput, O extends FuncOutp
       this.implementation = this.ByPassImplementation;
       return;
     }
-    this.implementation = this[func.type] as ((
+    this.implementation = this[func.type] as (
       invokeStack: FuncInvokeStack<I, O, D, Type>,
       context: Context<Func<I, O, D, Type>>,
       input: z.infer<I>,
-    ) => FuncReturn<O, Type>);
+    ) => FuncReturn<O, Type>;
     if (!this.implementation) {
       throw new Error(`No implementation found for ${func.type}`);
     }
   }
-  implementation(_is: FuncInvokeStack<I, O, D, Type>, _c: Context, _i: z.infer<I>): FuncReturn<O, Type> {
+  implementation(
+    _is: FuncInvokeStack<I, O, D, Type>,
+    _c: Context,
+    _i: z.infer<I>,
+  ): FuncReturn<O, Type> {
     throw new Error(`Not implemented`);
   }
 }
 
 /** Base Func Invoke Stack */
-export class FuncInvokeStack<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes> {
+export class FuncInvokeStack<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> {
   constructor(
     protected wrappers: FuncWrapper<I, O, D, Type>[],
     protected implementation: FuncImplementation<I, O, D, Type>,
   ) {
     Object.freeze(this.wrappers);
   }
-  $(context: Context, input: z.infer<I>): ReturnType<FuncImplementation<I, O, D, Type>> {
+  $(
+    context: Context,
+    input: z.infer<I>,
+  ): ReturnType<FuncImplementation<I, O, D, Type>> {
     if (this.wrappers.length) {
-      return this.wrappers[0].implementation(new FuncInvokeStack(this.wrappers.slice(1), this.implementation), context, input);
+      return this.wrappers[0].implementation(
+        new FuncInvokeStack(this.wrappers.slice(1), this.implementation),
+        context,
+        input,
+      );
     } else {
       return this.implementation(context, input);
     }
@@ -113,12 +161,19 @@ declare abstract class ClassXYZ {
 /**
  * Base Func Node [Is one of node used in Context.node]
  */
-export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends FuncInvokeStack<I, O, D, Type> {
-  static getWrapperOf<W extends typeof ClassXYZ, I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>(
-    func: Func<I, O, D, Type>,
-    wrapperClass: W,
-  ): InstanceType<W>[] {
+export class Func<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends FuncTypes,
+> extends FuncInvokeStack<I, O, D, Type> {
+  static getWrapperOf<
+    W extends typeof ClassXYZ,
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+    Type extends FuncTypes,
+  >(func: Func<I, O, D, Type>, wrapperClass: W): InstanceType<W>[] {
     const w: InstanceType<W>[] = [];
     for (const x of func.wrappers) {
       if (x instanceof wrapperClass) {
@@ -147,9 +202,11 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
     return `${this.ref.namespace}:${this.ref.name}`;
   }
 
-  static buildSyncFunc<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
-    func: Func<I, O, D, "SyncFunc">,
-  ): FuncExposed<I, O, "SyncFunc"> {
+  static buildSyncFunc<
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+  >(func: Func<I, O, D, "SyncFunc">): FuncExposed<I, O, "SyncFunc"> {
     return (context, input) => {
       const childContext = new Context(context, func.refString(), func);
       try {
@@ -159,9 +216,11 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
       }
     };
   }
-  static buildAsyncFunc<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
-    func: Func<I, O, D, "AsyncFunc">,
-  ): FuncExposed<I, O, "AsyncFunc"> {
+  static buildAsyncFunc<
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+  >(func: Func<I, O, D, "AsyncFunc">): FuncExposed<I, O, "AsyncFunc"> {
     return (context, input) => {
       const childContext = new Context(context, func.refString(), func);
       try {
@@ -174,9 +233,11 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
       }
     };
   }
-  static buildStreamFunc<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
-    func: Func<I, O, D, "StreamFunc">,
-  ): FuncExposed<I, O, "StreamFunc"> {
+  static buildStreamFunc<
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+  >(func: Func<I, O, D, "StreamFunc">): FuncExposed<I, O, "StreamFunc"> {
     return (context, input) => {
       const childContext = new Context(context, func.refString(), func);
       try {
@@ -204,9 +265,13 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
     }
     return Object.assign(build, { node: this });
   }
-  createPort(cancelable = true): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
-    : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
-    : never {
+  createPort(
+    cancelable = true,
+  ): Type extends "AsyncFunc"
+    ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
+    : Type extends "StreamFunc"
+      ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+      : never {
     if (this.type === "AsyncFunc") {
       return T.$async(cancelable) as never;
     } else if (this.type === "StreamFunc") {
@@ -217,14 +282,29 @@ export class Func<I extends FuncInput, O extends FuncOutput, D extends FuncDecla
   }
 }
 export type BuilderType = FuncTypes | "AsyncLike";
-export type BuilderToFuncType<T extends BuilderType> = T extends "AsyncLike" ? "AsyncFunc" : T;
-export type BuilderImplementation<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends BuilderType> = Type extends
-  "AsyncLike" ? (context: Context, input: z.infer<I>) => PromiseLike<z.infer<O>>
+export type BuilderToFuncType<T extends BuilderType> = T extends "AsyncLike"
+  ? "AsyncFunc"
+  : T;
+export type BuilderImplementation<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends BuilderType,
+> = Type extends "AsyncLike"
+  ? (
+      context: Context<Func<I, O, D, BuilderToFuncType<Type>>>,
+      input: z.infer<I>,
+    ) => PromiseLike<z.infer<O>>
   : FuncImplementation<I, O, D, BuilderToFuncType<Type>>;
 /**
  * Base Func Builder, Use this to build a Func Node
  */
-export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends BuilderType> {
+export class FuncBuilder<
+  I extends FuncInput,
+  O extends FuncOutput,
+  D extends FuncDeclaration,
+  Type extends BuilderType,
+> {
   constructor(
     protected type: Type,
     protected input: I,
@@ -247,11 +327,15 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
     this.output = output as any;
     return this as never;
   }
-  $wrap(wrap: FuncWrapper<I, O, D, BuilderToFuncType<Type>>): FuncBuilder<I, O, D, Type> {
+  $wrap(
+    wrap: FuncWrapper<I, O, D, BuilderToFuncType<Type>>,
+  ): FuncBuilder<I, O, D, Type> {
     this.wrappers.push(wrap);
     return this;
   }
-  $declare<$D extends FuncDeclaration>(dec: $D): FuncBuilder<I, O, $D & D, Type> {
+  $declare<$D extends FuncDeclaration>(
+    dec: $D,
+  ): FuncBuilder<I, O, $D & D, Type> {
     Object.assign(this.declaration, dec);
     return this;
   }
@@ -259,8 +343,15 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
     this.ref = ref;
     return this;
   }
-  private static _promised<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration>(
-    implementation: (context: Context<Func<I, O, D, "AsyncFunc">>, input: z.infer<I>) => PromiseLike<z.infer<O>>,
+  private static _promised<
+    I extends FuncInput,
+    O extends FuncOutput,
+    D extends FuncDeclaration,
+  >(
+    implementation: (
+      context: Context<Func<I, O, D, "AsyncFunc">>,
+      input: z.infer<I>,
+    ) => PromiseLike<z.infer<O>>,
     context: Context<Func<I, O, D, "AsyncFunc">>,
     input: z.infer<I>,
   ): T.PPromise<z.infer<O>> {
@@ -272,9 +363,18 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
   }
   protected toFuncTypes(
     implementation: BuilderImplementation<I, O, D, Type>,
-  ): [BuilderToFuncType<Type>, FuncImplementation<I, O, D, BuilderToFuncType<Type>>] {
+  ): [
+    BuilderToFuncType<Type>,
+    FuncImplementation<I, O, D, BuilderToFuncType<Type>>,
+  ] {
     if (this.type === "AsyncLike") {
-      return ["AsyncFunc", (FuncBuilder._promised<I, O, D>).bind(FuncBuilder, implementation as never)] as never;
+      return [
+        "AsyncFunc",
+        (FuncBuilder._promised<I, O, D>).bind(
+          FuncBuilder,
+          implementation as never,
+        ),
+      ] as never;
     }
     return [this.type, implementation] as never;
   }
@@ -317,11 +417,23 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, D extends Fu
  * console.log(fib10);
  * ```
  */
-export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "SyncFunc"> {
-  return new FuncBuilder("SyncFunc", unimplementedSchema, unimplementedSchema, {}, [], {
-    namespace: "Unknown",
-    name: "Unknown",
-  });
+export function syncFunc(): FuncBuilder<
+  z.ZodNever,
+  z.ZodNever,
+  Record<never, never>,
+  "SyncFunc"
+> {
+  return new FuncBuilder(
+    "SyncFunc",
+    unimplementedSchema,
+    unimplementedSchema,
+    {},
+    [],
+    {
+      namespace: "Unknown",
+      name: "Unknown",
+    },
+  );
 }
 
 /**
@@ -344,11 +456,23 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, ne
  * console.log(user10);
  * ```
  */
-export function asyncLike(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "AsyncLike"> {
-  return new FuncBuilder("AsyncLike", unimplementedSchema, unimplementedSchema, {}, [], {
-    namespace: "Unknown",
-    name: "Unknown",
-  });
+export function asyncLike(): FuncBuilder<
+  z.ZodNever,
+  z.ZodNever,
+  Record<never, never>,
+  "AsyncLike"
+> {
+  return new FuncBuilder(
+    "AsyncLike",
+    unimplementedSchema,
+    unimplementedSchema,
+    {},
+    [],
+    {
+      namespace: "Unknown",
+      name: "Unknown",
+    },
+  );
 }
 
 /**
@@ -377,15 +501,27 @@ export function asyncLike(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, n
  * fetchUser(context, 10).then(console.log).catch(console.error);
  * ```
  */
-export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "AsyncFunc"> {
-  return new FuncBuilder("AsyncFunc", unimplementedSchema, unimplementedSchema, {}, [], { namespace: "Unknown", name: "Unknown" });
+export function asyncFunc(): FuncBuilder<
+  z.ZodNever,
+  z.ZodNever,
+  Record<never, never>,
+  "AsyncFunc"
+> {
+  return new FuncBuilder(
+    "AsyncFunc",
+    unimplementedSchema,
+    unimplementedSchema,
+    {},
+    [],
+    { namespace: "Unknown", name: "Unknown" },
+  );
 }
 
 /**
  * Base Multi Callback Builder for subscriptions
  * @example
  * ```ts
- * const listenUserChanges = subsCb()
+ * const listenUserChanges = streamFunc()
  *   .$input(z.number().int().positive())
  *   .$output(z.object({name: z.string(), age: z.number().int().positive(), ...}))
  *   .$wrap(new WFParser({output: false}))
@@ -408,6 +544,18 @@ export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, n
  * setTimeout(process.cancel.bind(process), 1000 * 3600);
  * ```
  */
-export function subsCb(): FuncBuilder<z.ZodNever, z.ZodNever, Record<never, never>, "StreamFunc"> {
-  return new FuncBuilder("StreamFunc", unimplementedSchema, unimplementedSchema, {}, [], { namespace: "Unknown", name: "Unknown" });
+export function streamFunc(): FuncBuilder<
+  z.ZodNever,
+  z.ZodNever,
+  Record<never, never>,
+  "StreamFunc"
+> {
+  return new FuncBuilder(
+    "StreamFunc",
+    unimplementedSchema,
+    unimplementedSchema,
+    {},
+    [],
+    { namespace: "Unknown", name: "Unknown" },
+  );
 }
