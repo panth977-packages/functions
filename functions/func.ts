@@ -206,60 +206,66 @@ export class Func<
     I extends FuncInput,
     O extends FuncOutput,
     D extends FuncDeclaration,
-  >(func: Func<I, O, D, "SyncFunc">): FuncExposed<I, O, "SyncFunc"> {
-    return (context, input) => {
-      const childContext = new Context(context, func.refString(), func);
-      try {
-        return func.$(childContext, input);
-      } finally {
-        Context.dispose(childContext);
-      }
-    };
+  >(
+    func: Func<I, O, D, "SyncFunc">,
+    context: Context,
+    input: z.infer<I>,
+  ): FuncReturn<O, "SyncFunc"> {
+    const childContext = new Context(context, func.refString(), func);
+    try {
+      return func.$(childContext, input);
+    } finally {
+      Context.dispose(childContext);
+    }
   }
   static buildAsyncFunc<
     I extends FuncInput,
     O extends FuncOutput,
     D extends FuncDeclaration,
-  >(func: Func<I, O, D, "AsyncFunc">): FuncExposed<I, O, "AsyncFunc"> {
-    return (context, input) => {
-      const childContext = new Context(context, func.refString(), func);
-      try {
-        const promise = func.$(childContext, input);
-        promise.onend(Context.dispose.bind(Context, childContext));
-        return T.PPromise.from(promise);
-      } catch (error) {
-        Context.dispose(childContext);
-        return T.PPromise.reject(error);
-      }
-    };
+  >(
+    func: Func<I, O, D, "AsyncFunc">,
+    context: Context,
+    input: z.infer<I>,
+  ): FuncReturn<O, "AsyncFunc"> {
+    const childContext = new Context(context, func.refString(), func);
+    try {
+      const promise = func.$(childContext, input);
+      promise.onend(Context.dispose.bind(Context, childContext));
+      return T.PPromise.from(promise);
+    } catch (error) {
+      Context.dispose(childContext);
+      return T.PPromise.reject(error);
+    }
   }
   static buildStreamFunc<
     I extends FuncInput,
     O extends FuncOutput,
     D extends FuncDeclaration,
-  >(func: Func<I, O, D, "StreamFunc">): FuncExposed<I, O, "StreamFunc"> {
-    return (context, input) => {
-      const childContext = new Context(context, func.refString(), func);
-      try {
-        const process = func.$(childContext, input);
-        process.onend(Context.dispose.bind(Context, childContext));
-        return process;
-      } catch (error) {
-        Context.dispose(childContext);
-        return T.PStream.reject(error);
-      }
-    };
+  >(
+    func: Func<I, O, D, "StreamFunc">,
+    context: Context,
+    input: z.infer<I>,
+  ): FuncReturn<O, "StreamFunc"> {
+    const childContext = new Context(context, func.refString(), func);
+    try {
+      const process = func.$(childContext, input);
+      process.onend(Context.dispose.bind(Context, childContext));
+      return process;
+    } catch (error) {
+      Context.dispose(childContext);
+      return T.PStream.reject(error);
+    }
   }
 
   create(): FuncExported<I, O, D, Type> {
     Object.freeze(this);
     let build: any;
     if (this.type === "AsyncFunc") {
-      build = Func.buildAsyncFunc(this as any);
+      build = Func.buildAsyncFunc.bind(Func, this as any);
     } else if (this.type === "SyncFunc") {
-      build = Func.buildSyncFunc(this as any);
+      build = Func.buildSyncFunc.bind(Func, this as any);
     } else if (this.type === "StreamFunc") {
-      build = Func.buildStreamFunc(this as any);
+      build = Func.buildStreamFunc.bind(Func, this as any);
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
     }
