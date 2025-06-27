@@ -300,8 +300,13 @@ export type BuilderImplementation<
   ? (
       context: Context<Func<I, O, D, BuilderToFuncType<Type>>>,
       input: z.infer<I>,
-    ) => PromiseLike<z.infer<O>>
-  : FuncImplementation<I, O, D, BuilderToFuncType<Type>>;
+    ) => z.infer<O> | PromiseLike<z.infer<O>>
+  : Type extends "AsyncFunc"
+    ? (
+        context: Context<Func<I, O, D, BuilderToFuncType<Type>>>,
+        input: z.infer<I>,
+      ) => z.infer<O> | T.PPromise<z.infer<O>>
+    : FuncImplementation<I, O, D, BuilderToFuncType<Type>>;
 /**
  * Base Func Builder, Use this to build a Func Node
  */
@@ -373,7 +378,7 @@ export class FuncBuilder<
     BuilderToFuncType<Type>,
     FuncImplementation<I, O, D, BuilderToFuncType<Type>>,
   ] {
-    if (this.type === "AsyncLike") {
+    if (this.type === "AsyncLike" || this.type === "AsyncFunc") {
       return [
         "AsyncFunc",
         (FuncBuilder._promised<I, O, D>).bind(
