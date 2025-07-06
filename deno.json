@@ -1,6 +1,6 @@
 {
   "name": "@panth977/functions",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "exports": "./mod.ts",
   "license": "MIT",
   "tasks": {

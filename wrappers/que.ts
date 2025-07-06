@@ -3,20 +3,11 @@
  * @module
  */
 import type z from "zod/v4";
-import {
-  type FuncDeclaration,
-  type FuncInput,
-  type FuncInvokeStack,
-  type FuncOutput,
-  type FuncTypes,
-  GenericFuncWrapper,
-} from "../functions/index.ts";
-import type { Context } from "../functions/context.ts";
-import type { Func } from "../functions/func.ts";
+import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import type { Context } from "../context.ts";
 import type { T } from "@panth977/tools";
 
-export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends GenericFuncWrapper<I, O, D, Type> {
+export class WFQue<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> extends GenericFuncWrapper<I, O, Type> {
   protected que: Array<(cb: VoidFunction) => void> = [];
   constructor(readonly maxConcurrency = 1) {
     super();
@@ -43,8 +34,8 @@ export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDecl
     }
   }
   private handler(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
-    context: Context<Func<I, O, D, "AsyncFunc">>,
+    invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
+    context: Context<Func<I, O, "AsyncFunc">>,
     input: z.core.output<I>,
     port: T.PPromisePort<z.core.output<O>>,
     done: VoidFunction,
@@ -56,8 +47,8 @@ export class WFQue<I extends FuncInput, O extends FuncOutput, D extends FuncDecl
     port.oncancel(process.cancel.bind(process));
   }
   override AsyncFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
-    context: Context<Func<I, O, D, "AsyncFunc">>,
+    invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
+    context: Context<Func<I, O, "AsyncFunc">>,
     input: z.core.output<I>,
   ): T.PPromise<z.core.output<O>> {
     const [port, promise] = context.node.createPort();

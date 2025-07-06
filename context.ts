@@ -305,14 +305,11 @@ function HooksState<Arg extends any[]>(
     throw new Error(`Invalid scope: ${scope}`);
   }
 }
-type $HooksFn<K extends keyof typeof hooks> =
-  (typeof hooks)[K] extends ContextState<Array<infer X>> ? X : never;
-type $HooksArg<K extends keyof typeof hooks> =
-  (typeof hooks)[K] extends ContextState<
-    Array<(context: Context, ...args: infer X) => void>
-  >
-    ? X
-    : never;
+type $HooksFn<K extends keyof typeof hooks> = (typeof hooks)[K] extends ContextState<Array<infer X>> ? X : never;
+type $HooksArg<K extends keyof typeof hooks> = (typeof hooks)[K] extends ContextState<
+  Array<(context: Context, ...args: infer X) => void>
+> ? X
+  : never;
 
 export const hooks: {
   tInit: ContextState<THooksFn<[]>[]>;

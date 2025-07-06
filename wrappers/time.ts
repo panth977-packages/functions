@@ -3,13 +3,11 @@
  * @module
  */
 import type z from "zod/v4";
-import { type FuncDeclaration, type FuncInput, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../functions/index.ts";
-import type { Context } from "../functions/context.ts";
-import type { Func, FuncInvokeStack } from "../functions/func.ts";
+import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import type { Context } from "../context.ts";
 import type { T } from "@panth977/tools";
 
-export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDeclaration, Type extends FuncTypes>
-  extends GenericFuncWrapper<I, O, D, Type> {
+export class WFTimer<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> extends GenericFuncWrapper<I, O, Type> {
   constructor(public time = false) {
     super();
   }
@@ -24,8 +22,8 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     timer[0] = now;
   }
   override SyncFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "SyncFunc">,
-    context: Context<Func<I, O, D, "SyncFunc">>,
+    invokeStack: FuncInvokeStack<I, O, "SyncFunc">,
+    context: Context<Func<I, O, "SyncFunc">>,
     input: z.core.output<I>,
   ): z.core.output<O> {
     const t = WFTimer.logInit(context);
@@ -34,8 +32,8 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     return output;
   }
   override AsyncFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "AsyncFunc">,
-    context: Context<Func<I, O, D, "AsyncFunc">>,
+    invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
+    context: Context<Func<I, O, "AsyncFunc">>,
     input: z.core.output<I>,
   ): T.PPromise<z.core.output<O>> {
     const t = WFTimer.logInit(context);
@@ -47,7 +45,7 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     return process;
   }
   private streamOnNext(
-    context: Context<Func<I, O, D, "StreamFunc">>,
+    context: Context<Func<I, O, "StreamFunc">>,
     t: ReturnType<typeof WFTimer.logInit>,
     i: number,
     process: T.PStream<z.core.output<O>>,
@@ -57,8 +55,8 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     process.onnext(this.streamOnNext.bind(this, context, t, i + 1, process));
   }
   protected override StreamFunc(
-    invokeStack: FuncInvokeStack<I, O, D, "StreamFunc">,
-    context: Context<Func<I, O, D, "StreamFunc">>,
+    invokeStack: FuncInvokeStack<I, O, "StreamFunc">,
+    context: Context<Func<I, O, "StreamFunc">>,
     input: z.core.output<I>,
   ): T.PStream<z.core.output<O>> {
     const t = WFTimer.logInit(context);
@@ -70,7 +68,7 @@ export class WFTimer<I extends FuncInput, O extends FuncOutput, D extends FuncDe
     process.onfinish(WFTimer.logNextEvent.bind(WFTimer, context, "StreamComplete", t));
     return process;
   }
-  override ShouldIgnore(_: Func<I, O, D, Type>): boolean {
+  override ShouldIgnore(_: Func<I, O, Type>): boolean {
     return !this.time;
   }
 }
