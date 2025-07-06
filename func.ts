@@ -267,44 +267,6 @@ export class Func<
     }
   }
 }
-// type BuilderTypeMapping = {
-//   "SyncFunc": "SyncFunc";
-//   "AsyncFunc": "AsyncFunc";
-//   "AsyncLike": "AsyncFunc";
-//   "AsyncBuilder": "AsyncFunc";
-//   "StreamFunc": "StreamFunc";
-//   "AsyncStream": "StreamFunc";
-//   "StreamBuilder": "StreamFunc";
-// };
-// export type BuilderType = keyof BuilderTypeMapping;
-// export type BuilderToFuncType<T extends BuilderType> = BuilderTypeMapping[T];
-
-// export type BuilderImplementation<
-//   I extends FuncInput,
-//   O extends FuncOutput,
-//   Type extends BuilderType,
-// > = {
-//   "SyncFunc": (context: Context<Func<I, O, "SyncFunc">>, input: z.infer<I>) => z.infer<O>;
-//   "AsyncFunc": (context: Context<Func<I, O, "AsyncFunc">>, input: z.infer<I>) => z.infer<O> | T.PPromise<z.infer<O>>;
-//   "AsyncLike": (context: Context<Func<I, O, "AsyncFunc">>, input: z.infer<I>) => z.infer<O> | PromiseLike<z.infer<O>>;
-//   "AsyncBuilder": (
-//     context: Context<Func<I, O, "AsyncFunc">>,
-//     input: z.infer<I>,
-//     port: T.PPromisePort<z.infer<O>>,
-//     promise: Promise<z.infer<O>>,
-//   ) => void;
-//   "StreamFunc": (context: Context<Func<I, O, "StreamFunc">>, input: z.infer<I>) => z.infer<O> | T.PStream<z.infer<O>>;
-//   "AsyncStream": (
-//     context: Context<Func<I, O, "StreamFunc">>,
-//     input: z.infer<I>,
-//   ) => z.infer<O> | PromiseLike<z.infer<O>> | PromiseLike<T.PStream<z.infer<O>>>;
-//   "StreamBuilder": (
-//     context: Context<Func<I, O, "StreamFunc">>,
-//     input: z.infer<I>,
-//     port: T.PStreamPort<z.infer<O>>,
-//     stream: T.PStream<z.infer<O>>,
-//   ) => void;
-// }[Type];
 
 /**
  * Base Func Builder, Use this to build a Func Node
@@ -341,7 +303,7 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, Type extends
     this.ref = ref;
     return this;
   }
-  protected builder(implementation: FuncImplementation<I, O, Type>): FuncExported<I, O, Type> {
+  $(implementation: FuncImplementation<I, O, Type>): FuncExported<I, O, Type> {
     if ((this.input as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
@@ -356,9 +318,6 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, Type extends
       implementation,
       this.ref,
     ).create();
-  }
-  $(implementation: FuncImplementation<I, O, Type>): FuncExported<I, O, Type> {
-    return this.builder(implementation);
   }
 }
 
