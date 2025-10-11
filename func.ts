@@ -2,7 +2,7 @@
  * Function builder
  * @module
  */
-import { z } from "zod/v4";
+import { z } from "zod";
 import { Context } from "./context.ts";
 import { T } from "@panth977/tools";
 
@@ -18,10 +18,13 @@ export type FuncOutput = z.ZodType;
 export type FuncReturn<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc" ? z.infer<O>
-  : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
-  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
-  : never;
+> = Type extends "SyncFunc"
+  ? z.infer<O>
+  : Type extends "AsyncFunc"
+    ? T.PPromise<z.infer<O>>
+    : Type extends "StreamFunc"
+      ? T.PStream<z.infer<O>>
+      : never;
 export type FuncExposed<
   I extends FuncInput,
   O extends FuncOutput,
@@ -187,10 +190,7 @@ export class Func<
     return `${this.ref.namespace}:${this.ref.name}`;
   }
 
-  static buildSyncFunc<
-    I extends FuncInput,
-    O extends FuncOutput,
-  >(
+  static buildSyncFunc<I extends FuncInput, O extends FuncOutput>(
     func: Func<I, O, "SyncFunc">,
     context: Context,
     input: z.infer<I>,
@@ -202,10 +202,7 @@ export class Func<
       Context.dispose(childContext);
     }
   }
-  static buildAsyncFunc<
-    I extends FuncInput,
-    O extends FuncOutput,
-  >(
+  static buildAsyncFunc<I extends FuncInput, O extends FuncOutput>(
     func: Func<I, O, "AsyncFunc">,
     context: Context,
     input: z.infer<I>,
@@ -220,10 +217,7 @@ export class Func<
       return T.PPromise.reject(error);
     }
   }
-  static buildStreamFunc<
-    I extends FuncInput,
-    O extends FuncOutput,
-  >(
+  static buildStreamFunc<I extends FuncInput, O extends FuncOutput>(
     func: Func<I, O, "StreamFunc">,
     context: Context,
     input: z.infer<I>,
@@ -255,9 +249,11 @@ export class Func<
   }
   createPort(
     cancelable = true,
-  ): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
-    : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
-    : never {
+  ): Type extends "AsyncFunc"
+    ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
+    : Type extends "StreamFunc"
+      ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+      : never {
     if (this.type === "AsyncFunc") {
       return T.$async(cancelable) as never;
     } else if (this.type === "StreamFunc") {
@@ -271,7 +267,11 @@ export class Func<
 /**
  * Base Func Builder, Use this to build a Func Node
  */
-export class FuncBuilder<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> {
+export class FuncBuilder<
+  I extends FuncInput,
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> {
   constructor(
     protected type: Type,
     protected input: I,
@@ -293,9 +293,7 @@ export class FuncBuilder<I extends FuncInput, O extends FuncOutput, Type extends
     this.output = output as any;
     return this as never;
   }
-  $wrap(
-    wrap: FuncWrapper<I, O, Type>,
-  ): FuncBuilder<I, O, Type> {
+  $wrap(wrap: FuncWrapper<I, O, Type>): FuncBuilder<I, O, Type> {
     this.wrappers.push(wrap);
     return this;
   }
@@ -414,7 +412,11 @@ export function asyncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, "AsyncFunc"> {
  * setTimeout(process.cancel.bind(process), 1000 * 3600);
  * ```
  */
-export function streamFunc(): FuncBuilder<z.ZodNever, z.ZodNever, "StreamFunc"> {
+export function streamFunc(): FuncBuilder<
+  z.ZodNever,
+  z.ZodNever,
+  "StreamFunc"
+> {
   return new FuncBuilder(
     "StreamFunc",
     unimplementedSchema,

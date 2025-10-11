@@ -2,12 +2,23 @@
  * Memoized Wrapper
  * @module
  */
-import type z from "zod/v4";
-import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import type z from "zod";
+import {
+  type Func,
+  type FuncInput,
+  type FuncInvokeStack,
+  type FuncOutput,
+  type FuncTypes,
+  GenericFuncWrapper,
+} from "../func.ts";
 import type { Context } from "../context.ts";
 import type { T } from "@panth977/tools";
 
-export class WFQue<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes> extends GenericFuncWrapper<I, O, Type> {
+export class WFQue<
+  I extends FuncInput,
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> extends GenericFuncWrapper<I, O, Type> {
   protected que: Array<(cb: VoidFunction) => void> = [];
   constructor(readonly maxConcurrency = 1) {
     super();
@@ -36,8 +47,8 @@ export class WFQue<I extends FuncInput, O extends FuncOutput, Type extends FuncT
   private handler(
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
-    input: z.core.output<I>,
-    port: T.PPromisePort<z.core.output<O>>,
+    input: z.infer<I>,
+    port: T.PPromisePort<z.infer<O>>,
     done: VoidFunction,
   ) {
     const process = invokeStack.$(context, input);
@@ -49,8 +60,8 @@ export class WFQue<I extends FuncInput, O extends FuncOutput, Type extends FuncT
   override AsyncFunc(
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
-    input: z.core.output<I>,
-  ): T.PPromise<z.core.output<O>> {
+    input: z.infer<I>,
+  ): T.PPromise<z.infer<O>> {
     const [port, promise] = context.node.createPort();
     invokeStack.$.bind(invokeStack, context, input);
     const handler = this.handler.bind(this, invokeStack, context, input, port);

@@ -1,9 +1,18 @@
-import type { z } from "zod/v4";
-import type { Context, Func, FuncImplementation, FuncInput, FuncOutput } from "./exports.ts";
+import type { z } from "zod";
+import type {
+  Context,
+  Func,
+  FuncImplementation,
+  FuncInput,
+  FuncOutput,
+} from "./exports.ts";
 import { T } from "@panth977/tools";
 
 function _AsyncLike_<I extends FuncInput, O extends FuncOutput>(
-  implementation: (context: Context<Func<I, O, "AsyncFunc">>, input: z.infer<I>) => z.infer<O> | PromiseLike<z.infer<O>>,
+  implementation: (
+    context: Context<Func<I, O, "AsyncFunc">>,
+    input: z.infer<I>,
+  ) => z.infer<O> | PromiseLike<z.infer<O>>,
   context: Context<Func<I, O, "AsyncFunc">>,
   input: z.infer<I>,
 ): T.PPromise<z.infer<O>> {
@@ -31,7 +40,10 @@ function _AsyncLike_<I extends FuncInput, O extends FuncOutput>(
  * ```
  */
 export function AsyncLike<I extends FuncInput, O extends FuncOutput>(
-  implementation: (context: Context<Func<I, O, "AsyncFunc">>, input: z.infer<I>) => z.infer<O> | PromiseLike<z.infer<O>>,
+  implementation: (
+    context: Context<Func<I, O, "AsyncFunc">>,
+    input: z.infer<I>,
+  ) => z.infer<O> | PromiseLike<z.infer<O>>,
 ): FuncImplementation<I, O, "AsyncFunc"> {
   return (_AsyncLike_<I, O>).bind(null, implementation);
 }
@@ -172,7 +184,10 @@ export function AsyncClass<
     promise: T.PPromise<z.infer<O>>,
   ) => Cls,
 ): FuncImplementation<I, O, "AsyncFunc"> {
-  return (_AsyncClass_<I, O, Cls>).bind(null, implementationBuilder(BaseAsyncClass<I, O>));
+  return (_AsyncClass_<I, O, Cls>).bind(
+    null,
+    implementationBuilder(BaseAsyncClass<I, O>),
+  );
 }
 
 class BaseStreamClass<I extends FuncInput, O extends FuncOutput> {
@@ -254,5 +269,8 @@ export function StreamClass<
     stream: T.PStream<z.infer<O>>,
   ) => Cls,
 ): FuncImplementation<I, O, "StreamFunc"> {
-  return (_StreamClass_<I, O, Cls>).bind(null, implementationBuilder(BaseStreamClass<I, O>));
+  return (_StreamClass_<I, O, Cls>).bind(
+    null,
+    implementationBuilder(BaseStreamClass<I, O>),
+  );
 }

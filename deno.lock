@@ -1,26 +1,26 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/tools@1": "1.0.15",
-    "npm:zod@^3.25.67": "3.25.67"
+    "jsr:@panth977/tools@2": "2.0.0",
+    "npm:zod@^3.25.76": "3.25.76"
   },
   "jsr": {
-    "@panth977/tools@1.0.15": {
-      "integrity": "36a7f83b4391e5cf41c29f57b675e8bdc9ba0dcb8204289388cf0c254ccb1d89",
+    "@panth977/tools@2.0.0": {
+      "integrity": "3ea9418cfdc76b01258fdf9735dd6be19ffc2bc39c9da6036c71f1a85026921f",
       "dependencies": [
         "npm:zod"
       ]
     }
   },
   "npm": {
-    "zod@3.25.67": {
-      "integrity": "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="
+    "zod@3.25.76": {
+      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/tools@1",
-      "npm:zod@^3.25.67"
+      "jsr:@panth977/tools@2",
+      "npm:zod@^3.25.76"
     ]
   }
 }
