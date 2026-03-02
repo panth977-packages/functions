@@ -18,13 +18,10 @@ export type FuncOutput = z.ZodType;
 export type FuncReturn<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc"
-  ? z.infer<O>
-  : Type extends "AsyncFunc"
-    ? T.PPromise<z.infer<O>>
-    : Type extends "StreamFunc"
-      ? T.PStream<z.infer<O>>
-      : never;
+> = Type extends "SyncFunc" ? z.infer<O>
+  : Type extends "AsyncFunc" ? PromiseLike<z.infer<O>>
+  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
+  : never;
 export type FuncExposed<
   I extends FuncInput,
   O extends FuncOutput,
@@ -209,9 +206,9 @@ export class Func<
   ): FuncReturn<O, "AsyncFunc"> {
     const childContext = new Context(context, func.refString(), func);
     try {
-      const promise = func.$(childContext, input);
+      const promise = T.PPromise.from(func.$(childContext, input));
       promise.onend(Context.dispose.bind(Context, childContext));
-      return T.PPromise.from(promise);
+      return promise;
     } catch (error) {
       Context.dispose(childContext);
       return T.PPromise.reject(error);
@@ -249,11 +246,9 @@ export class Func<
   }
   createPort(
     cancelable = true,
-  ): Type extends "AsyncFunc"
-    ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
-    : Type extends "StreamFunc"
-      ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
-      : never {
+  ): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
+    : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+    : never {
     if (this.type === "AsyncFunc") {
       return T.$async(cancelable) as never;
     } else if (this.type === "StreamFunc") {
