@@ -3,16 +3,9 @@
  * @module
  */
 import type z from "zod";
-import {
-  type Func,
-  type FuncInput,
-  type FuncInvokeStack,
-  type FuncOutput,
-  type FuncTypes,
-  GenericFuncWrapper,
-} from "../func.ts";
+import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools";
+import { T } from "@panth977/tools";
 
 export class WFParser<
   I extends FuncInput,
@@ -30,11 +23,12 @@ export class WFParser<
     const now = time ? Date.now() : 0;
     const func = context.node as Func<z.ZodType<T>, any, any>;
     const result = func.input.safeParse(input);
-    if (now !== 0)
+    if (now !== 0) {
       context.logDebug(
         func.refString("Input"),
         `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`,
       );
+    }
     if (!result.success) throw result.error;
     return result.data;
   }
@@ -42,11 +36,12 @@ export class WFParser<
     const now = time ? Date.now() : 0;
     const func = context.node as Func<any, z.ZodType<T>, any>;
     const result = func.output.safeParse(output);
-    if (now !== 0)
+    if (now !== 0) {
       context.logDebug(
         func.refString("Output"),
         `parsed ${result.success ? "✅" : "❌"} in ${Date.now() - now} ms`,
       );
+    }
     if (!result.success) throw result.error;
     return result.data;
   }
@@ -72,7 +67,7 @@ export class WFParser<
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }
-    const promise = invokeStack.$(context, input);
+    const promise = T.PPromise.from(invokeStack.$(context, input));
     if (this.output) {
       return promise.then(
         (WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time),
