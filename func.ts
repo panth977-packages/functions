@@ -22,6 +22,13 @@ export type FuncReturn<
   : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
   : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
   : never;
+export type FuncReturnLike<
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> = Type extends "SyncFunc" ? z.infer<O>
+  : Type extends "AsyncFunc" ? PromiseLike<z.infer<O>> | z.infer<O>
+  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
+  : never;
 export type FuncExposed<
   I extends FuncInput,
   O extends FuncOutput,
@@ -35,6 +42,14 @@ export type FuncImplementation<
   context: Context<Func<I, O, Type>>,
   input: z.infer<I>,
 ) => FuncReturn<O, Type>;
+export type FuncImplementationLike<
+  I extends FuncInput,
+  O extends FuncOutput,
+  Type extends FuncTypes,
+> = (
+  context: Context<Func<I, O, Type>>,
+  input: z.infer<I>,
+) => FuncReturnLike<O, Type>;
 export type FuncExported<
   I extends FuncInput,
   O extends FuncOutput,
@@ -296,21 +311,45 @@ export class FuncBuilder<
     this.ref = ref;
     return this;
   }
-  $(implementation: FuncImplementation<I, O, Type>): FuncExported<I, O, Type> {
+  $(implementation: FuncImplementationLike<I, O, Type>): FuncExported<I, O, Type> {
     if ((this.input as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
     if ((this.output as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Output Schema!");
     }
+    if (this.type === "AsyncFunc") {
+      return new Func(
+        this.type,
+        this.input,
+        this.output,
+        this.wrappers,
+        (_AsyncLike_<I, O>).bind(null, implementation as never) as never as FuncImplementation<I, O, Type>,
+        this.ref,
+      ).create();
+    }
     return new Func(
       this.type,
       this.input,
       this.output,
       this.wrappers,
-      implementation,
+      implementation as FuncImplementation<I, O, Type>,
       this.ref,
     ).create();
+  }
+}
+function _AsyncLike_<I extends FuncInput, O extends FuncOutput>(
+  implementation: (
+    context: Context<Func<I, O, "AsyncFunc">>,
+    input: z.infer<I>,
+  ) => z.infer<O> | PromiseLike<z.infer<O>>,
+  context: Context<Func<I, O, "AsyncFunc">>,
+  input: z.infer<I>,
+): T.PPromise<z.infer<O>> {
+  try {
+    return T.PPromise.resolve(implementation(context, input));
+  } catch (err) {
+    return T.PPromise.reject(err);
   }
 }
 
