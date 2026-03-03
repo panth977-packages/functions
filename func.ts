@@ -318,38 +318,37 @@ export class FuncBuilder<
     if ((this.output as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Output Schema!");
     }
-    if (this.type === "AsyncFunc") {
-      return new Func(
-        this.type,
-        this.input,
-        this.output,
-        this.wrappers,
-        (_AsyncLike_<I, O>).bind(null, implementation as never) as never as FuncImplementation<I, O, Type>,
-        this.ref,
-      ).create();
-    }
     return new Func(
       this.type,
       this.input,
       this.output,
       this.wrappers,
-      implementation as FuncImplementation<I, O, Type>,
+      FuncBuilder.toImplementation(this.type, implementation),
       this.ref,
     ).create();
   }
-}
-function _AsyncLike_<I extends FuncInput, O extends FuncOutput>(
-  implementation: (
-    context: Context<Func<I, O, "AsyncFunc">>,
-    input: z.infer<I>,
-  ) => z.infer<O> | PromiseLike<z.infer<O>>,
-  context: Context<Func<I, O, "AsyncFunc">>,
-  input: z.infer<I>,
-): T.PPromise<z.infer<O>> {
-  try {
-    return T.PPromise.resolve(implementation(context, input));
-  } catch (err) {
-    return T.PPromise.reject(err);
+  static toImplementation<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes>(
+    type: Type,
+    imp: FuncImplementationLike<I, O, Type>,
+  ): FuncImplementation<I, O, Type> {
+    if (type === "AsyncFunc") {
+      return FuncBuilder._AsyncLike_.bind(null, imp) as FuncImplementation<I, O, Type>;
+    }
+    return imp as FuncImplementation<I, O, Type>;
+  }
+  static _AsyncLike_(
+    implementation: (context: Context, input: any) => any,
+    context: Context,
+    input: any,
+  ): T.PPromise<any> {
+    try {
+      const val = implementation(context, input);
+      if (val instanceof T.PPromise) return val;
+      if ("then" in val) return T.PPromise.from(implementation(context, input));
+      return T.PPromise.resolve(val);
+    } catch (err) {
+      return T.PPromise.reject(err);
+    }
   }
 }
 
