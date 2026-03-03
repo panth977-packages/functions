@@ -5,7 +5,7 @@
 import type z from "zod";
 import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
-import { T } from "@panth977/tools";
+import type { T } from "@panth977/tools";
 
 export class WFTimer<
   I extends FuncInput,
@@ -48,7 +48,7 @@ export class WFTimer<
     input: z.infer<I>,
   ): T.PPromise<z.infer<O>> {
     const t = WFTimer.logInit(context);
-    const process = T.PPromise.from(invokeStack.$(context, input));
+    const process = invokeStack.$(context, input);
     WFTimer.logNextEvent(context, "SyncCompleted", t);
     process.ondata(
       WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCompleted", t),

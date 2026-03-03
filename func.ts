@@ -19,7 +19,7 @@ export type FuncReturn<
   O extends FuncOutput,
   Type extends FuncTypes,
 > = Type extends "SyncFunc" ? z.infer<O>
-  : Type extends "AsyncFunc" ? PromiseLike<z.infer<O>>
+  : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
   : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
   : never;
 export type FuncExposed<
@@ -206,7 +206,7 @@ export class Func<
   ): FuncReturn<O, "AsyncFunc"> {
     const childContext = new Context(context, func.refString(), func);
     try {
-      const promise = T.PPromise.from(func.$(childContext, input));
+      const promise = func.$(childContext, input);
       promise.onend(Context.dispose.bind(Context, childContext));
       return promise;
     } catch (error) {

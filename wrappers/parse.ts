@@ -5,7 +5,7 @@
 import type z from "zod";
 import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
-import { T } from "@panth977/tools";
+import type { T } from "@panth977/tools";
 
 export class WFParser<
   I extends FuncInput,
@@ -67,7 +67,7 @@ export class WFParser<
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }
-    const promise = T.PPromise.from(invokeStack.$(context, input));
+    const promise = invokeStack.$(context, input);
     if (this.output) {
       return promise.then(
         (WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time),

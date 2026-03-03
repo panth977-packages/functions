@@ -5,7 +5,7 @@
 import type z from "zod";
 import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncReturn, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
-import { T } from "@panth977/tools";
+import type { T } from "@panth977/tools";
 
 /**
  * this will ignore the cancel signal even if the function has cancel implementation.
@@ -36,9 +36,9 @@ export class WFMemo<
   ): T.PPromise<z.infer<O>> {
     const cache = this.cache as Map<z.infer<I>, FuncReturn<O, "AsyncFunc">>;
     if (cache.has(input)) {
-      return T.PPromise.from(cache.get(input)!);
+      return cache.get(input)!;
     }
-    const output = T.PPromise.from(invokeStack.$(context, input));
+    const output = invokeStack.$(context, input);
     cache.set(input, output);
     output.onerror(cache.delete.bind(this.cache, input));
     output.oncancel(cache.delete.bind(this.cache, input));

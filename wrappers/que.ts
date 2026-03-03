@@ -5,7 +5,7 @@
 import type z from "zod";
 import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
-import { T } from "@panth977/tools";
+import type { T } from "@panth977/tools";
 
 export class WFQue<
   I extends FuncInput,
@@ -44,7 +44,7 @@ export class WFQue<
     port: T.PPromisePort<z.infer<O>>,
     done: VoidFunction,
   ) {
-    const process = T.PPromise.from(invokeStack.$(context, input));
+    const process = invokeStack.$(context, input);
     process.onend(done);
     process.ondata(port.return);
     process.onerror(port.throw);
