@@ -56,8 +56,10 @@ export type FuncExported<
   Type extends FuncTypes,
 > = FuncExposed<I, O, Type> & {
   node: Func<I, O, Type>;
-  output: z.infer<O>;
-  input: z.infer<I>;
+  output: O;
+  input: I;
+  $output: z.infer<O>;
+  $input: z.infer<I>;
 };
 
 /** Base Func Wrapper */
@@ -257,7 +259,7 @@ export class Func<
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
     }
-    return Object.assign(build, { node: this });
+    return Object.assign(build, { node: this, output: this.output, input: this.input });
   }
   createPort(
     cancelable = true,
