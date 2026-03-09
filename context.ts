@@ -102,7 +102,7 @@ export class Context<N = any> {
     this.cascadeState = new Map();
     if (c instanceof Context) {
       const context = c;
-      this.parent = context.parent;
+      this.parent = context;
       this.treeState = context.treeState;
       this.id = context.id;
     } else {
