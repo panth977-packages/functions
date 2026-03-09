@@ -344,10 +344,7 @@ export class FuncBuilder<
     input: any,
   ): T.PPromise<any> {
     try {
-      const val = implementation(context, input);
-      if (val instanceof T.PPromise) return val;
-      if ("then" in val) return T.PPromise.from(implementation(context, input));
-      return T.PPromise.resolve(val);
+      return T.PPromise.resolve(implementation(context, input));
     } catch (err) {
       return T.PPromise.reject(err);
     }

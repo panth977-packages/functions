@@ -1,11 +1,5 @@
 import type { z } from "zod";
-import type {
-  Context,
-  Func,
-  FuncImplementation,
-  FuncInput,
-  FuncOutput,
-} from "./exports.ts";
+import type { Context, Func, FuncImplementation, FuncInput, FuncOutput } from "./exports.ts";
 import { T } from "@panth977/tools";
 
 function _AsyncLike_<I extends FuncInput, O extends FuncOutput>(
