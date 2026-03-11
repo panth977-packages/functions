@@ -19,10 +19,10 @@ export class WFParser<
   ) {
     super();
   }
-  static parseInput<T>(context: Context, time: boolean, input: T): T {
+  static parseInput<T>(context: Context<Func<any, any, any>>, time: boolean, input: T): T {
     const now = time ? Date.now() : 0;
-    const func = context.node as Func<z.ZodType<T>, any, any>;
-    const result = func.input.safeParse(input);
+    const func = context.node;
+    const result = func.input.safeParse(input, { path: [func.refString("Input")] });
     if (now !== 0) {
       context.logDebug(
         func.refString("Input"),
@@ -35,7 +35,7 @@ export class WFParser<
   static parseOutput<T>(context: Context, time: boolean, output: T): T {
     const now = time ? Date.now() : 0;
     const func = context.node as Func<any, z.ZodType<T>, any>;
-    const result = func.output.safeParse(output);
+    const result = func.output.safeParse(output, { path: [func.refString("Output")] });
     if (now !== 0) {
       context.logDebug(
         func.refString("Output"),
