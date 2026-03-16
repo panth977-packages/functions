@@ -261,13 +261,11 @@ export class Func<
     }
     return Object.assign(build, { node: this, output: this.output, input: this.input });
   }
-  createPort(
-    cancelable = true,
-  ): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
+  createPort(): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
     : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
     : never {
     if (this.type === "AsyncFunc") {
-      return T.$async(cancelable) as never;
+      return T.$async() as never;
     } else if (this.type === "StreamFunc") {
       return T.$stream() as never;
     } else {
