@@ -52,7 +52,7 @@ function _AsyncWithPort_<I extends FuncInput, O extends FuncOutput>(
   context: Context<Func<I, O, "AsyncFunc">>,
   input: z.infer<I>,
 ): T.PPromise<z.infer<O>> {
-  const [port, promise] = T.$async<z.infer<O>>(true);
+  const [port, promise] = T.$async<z.infer<O>>();
   try {
     implementation(context, input, port, promise);
   } catch (err) {
@@ -123,7 +123,7 @@ function _AsyncClass_<
   context: Context<Func<I, O, "AsyncFunc">>,
   input: z.infer<I>,
 ): T.PPromise<z.infer<O>> {
-  const [port, promise] = T.$async<z.infer<O>>(true);
+  const [port, promise] = T.$async<z.infer<O>>();
   try {
     new implementation(context, input, port, promise).$();
   } catch (err) {
