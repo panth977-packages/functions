@@ -3,9 +3,16 @@
  * @module
  */
 import type z from "zod";
-import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import {
+  type Func,
+  type FuncInput,
+  type FuncInvokeStack,
+  type FuncOutput,
+  type FuncTypes,
+  GenericFuncWrapper,
+} from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools";
+import type { T } from "@panth977/tools"; // kept for PStream
 
 export class WFTimer<
   I extends FuncInput,
@@ -46,18 +53,13 @@ export class WFTimer<
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
-  ): T.PPromise<z.infer<O>> {
+  ): Promise<z.infer<O>> {
     const t = WFTimer.logInit(context);
     const process = invokeStack.$(context, input);
     WFTimer.logNextEvent(context, "SyncCompleted", t);
-    process.ondata(
-      WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCompleted", t),
-    );
-    process.onerror(
-      WFTimer.logNextEvent.bind(WFTimer, context, "AsyncError", t),
-    );
-    process.oncancel(
-      WFTimer.logNextEvent.bind(WFTimer, context, "AsyncCancel", t),
+    process.then(
+      () => WFTimer.logNextEvent(context, "AsyncCompleted", t),
+      () => WFTimer.logNextEvent(context, "AsyncError", t),
     );
     return process;
   }

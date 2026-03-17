@@ -3,9 +3,16 @@
  * @module
  */
 import type z from "zod";
-import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import {
+  type Func,
+  type FuncInput,
+  type FuncInvokeStack,
+  type FuncOutput,
+  type FuncTypes,
+  GenericFuncWrapper,
+} from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools";
+import type { T } from "@panth977/tools"; // kept for PStream
 
 export class WFParser<
   I extends FuncInput,
@@ -19,10 +26,16 @@ export class WFParser<
   ) {
     super();
   }
-  static parseInput<T>(context: Context<Func<any, any, any>>, time: boolean, input: T): T {
+  static parseInput<T>(
+    context: Context<Func<any, any, any>>,
+    time: boolean,
+    input: T,
+  ): T {
     const now = time ? Date.now() : 0;
     const func = context.node;
-    const result = func.input.safeParse(input, { path: [func.refString("Input")] });
+    const result = func.input.safeParse(input, {
+      path: [func.refString("Input")],
+    });
     if (now !== 0) {
       context.logDebug(
         func.refString("Input"),
@@ -35,7 +48,9 @@ export class WFParser<
   static parseOutput<T>(context: Context, time: boolean, output: T): T {
     const now = time ? Date.now() : 0;
     const func = context.node as Func<any, z.ZodType<T>, any>;
-    const result = func.output.safeParse(output, { path: [func.refString("Output")] });
+    const result = func.output.safeParse(output, {
+      path: [func.refString("Output")],
+    });
     if (now !== 0) {
       context.logDebug(
         func.refString("Output"),
@@ -63,7 +78,7 @@ export class WFParser<
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
-  ): T.PPromise<z.infer<O>> {
+  ): Promise<z.infer<O>> {
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }

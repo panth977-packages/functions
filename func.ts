@@ -18,17 +18,23 @@ export type FuncOutput = z.ZodType;
 export type FuncReturn<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc" ? z.infer<O>
-  : Type extends "AsyncFunc" ? T.PPromise<z.infer<O>>
-  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
-  : never;
+> = Type extends "SyncFunc"
+  ? z.infer<O>
+  : Type extends "AsyncFunc"
+    ? Promise<z.infer<O>>
+    : Type extends "StreamFunc"
+      ? T.PStream<z.infer<O>>
+      : never;
 export type FuncReturnLike<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc" ? z.infer<O>
-  : Type extends "AsyncFunc" ? PromiseLike<z.infer<O>> | z.infer<O>
-  : Type extends "StreamFunc" ? T.PStream<z.infer<O>>
-  : never;
+> = Type extends "SyncFunc"
+  ? z.infer<O>
+  : Type extends "AsyncFunc"
+    ? PromiseLike<z.infer<O>> | z.infer<O>
+    : Type extends "StreamFunc"
+      ? T.PStream<z.infer<O>>
+      : never;
 export type FuncExposed<
   I extends FuncInput,
   O extends FuncOutput,
@@ -42,14 +48,6 @@ export type FuncImplementation<
   context: Context<Func<I, O, Type>>,
   input: z.infer<I>,
 ) => FuncReturn<O, Type>;
-export type FuncImplementationLike<
-  I extends FuncInput,
-  O extends FuncOutput,
-  Type extends FuncTypes,
-> = (
-  context: Context<Func<I, O, Type>>,
-  input: z.infer<I>,
-) => FuncReturnLike<O, Type>;
 export type FuncExported<
   I extends FuncInput,
   O extends FuncOutput,
@@ -224,11 +222,14 @@ export class Func<
     const childContext = new Context(context, func.refString(), func);
     try {
       const promise = func.$(childContext, input);
-      promise.onend(Context.dispose.bind(Context, childContext));
+      promise.then(
+        () => Context.dispose(childContext),
+        () => Context.dispose(childContext),
+      );
       return promise;
     } catch (error) {
       Context.dispose(childContext);
-      return T.PPromise.reject(error);
+      return Promise.reject(error);
     }
   }
   static buildStreamFunc<I extends FuncInput, O extends FuncOutput>(
@@ -259,13 +260,29 @@ export class Func<
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
     }
-    return Object.assign(build, { node: this, output: this.output, input: this.input });
+    return Object.assign(build, {
+      node: this,
+      output: this.output,
+      input: this.input,
+    });
   }
-  createPort(): Type extends "AsyncFunc" ? [T.PPromisePort<z.infer<O>>, T.PPromise<z.infer<O>>]
-    : Type extends "StreamFunc" ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
-    : never {
+  createPort(): Type extends "AsyncFunc"
+    ? {
+        resolve: (value: z.infer<O>) => void;
+        reject: (reason: unknown) => void;
+        promise: Promise<z.infer<O>>;
+      }
+    : Type extends "StreamFunc"
+      ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+      : never {
     if (this.type === "AsyncFunc") {
-      return T.$async() as never;
+      let resolve!: (value: z.infer<O>) => void;
+      let reject!: (reason: unknown) => void;
+      const promise = new Promise<z.infer<O>>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { resolve, reject, promise } as never;
     } else if (this.type === "StreamFunc") {
       return T.$stream() as never;
     } else {
@@ -311,7 +328,7 @@ export class FuncBuilder<
     this.ref = ref;
     return this;
   }
-  $(implementation: FuncImplementationLike<I, O, Type>): FuncExported<I, O, Type> {
+  $(implementation: FuncImplementation<I, O, Type>): FuncExported<I, O, Type> {
     if ((this.input as z.ZodType) === unimplementedSchema) {
       throw new Error("Unimplemented Input Schema!");
     }
@@ -323,29 +340,9 @@ export class FuncBuilder<
       this.input,
       this.output,
       this.wrappers,
-      FuncBuilder.toImplementation(this.type, implementation),
+      implementation,
       this.ref,
     ).create();
-  }
-  static toImplementation<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes>(
-    type: Type,
-    imp: FuncImplementationLike<I, O, Type>,
-  ): FuncImplementation<I, O, Type> {
-    if (type === "AsyncFunc") {
-      return FuncBuilder._AsyncLike_.bind(null, imp) as FuncImplementation<I, O, Type>;
-    }
-    return imp as FuncImplementation<I, O, Type>;
-  }
-  static _AsyncLike_(
-    implementation: (context: Context, input: any) => any,
-    context: Context,
-    input: any,
-  ): T.PPromise<any> {
-    try {
-      return T.PPromise.resolve(implementation(context, input));
-    } catch (err) {
-      return T.PPromise.reject(err);
-    }
   }
 }
 
@@ -389,16 +386,15 @@ export function syncFunc(): FuncBuilder<z.ZodNever, z.ZodNever, "SyncFunc"> {
  *   .$wrap(new WFParser({output: false}))
  *   .$wrap(new WFMemo())
  *   .$((context, input) => {
- *     const [port, promise] = context.node.createPort(); // T.$async<typeof fetchUser.output>(true);
+ *     const { resolve, reject, promise } = context.node.createPort();
  *     const query = `SELECT name, age FROM users WHERE id = $1`;
- *     const jobId = pg.query(query, [input], (result) => {
+ *     pg.query(query, [input], (result) => {
  *       if (!result.rowCount) {
- *         port.throw(HttpError.NotFound('User not found!'));
+ *         reject(HttpError.NotFound('User not found!'));
  *       } else {
- *         port.return(result.rows[0]);
+ *         resolve(result.rows[0]);
  *       }
  *     });
- *     port.onCancel = () => pg.cancel(jobId);
  *     return promise;
  *   });
  * const context = new Context(null, "No Reason", null);

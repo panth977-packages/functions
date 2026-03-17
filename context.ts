@@ -110,7 +110,6 @@ export class Context<N = any> {
       this.treeState = new Map();
       this.id = c;
     }
-    this.init();
   }
 
   /**
@@ -266,10 +265,6 @@ export class Context<N = any> {
     }
     return this;
   }
-  private init() {
-    Context.runHooks(this, "tInit", []);
-    Context.runHooks(this, "cInit", []);
-  }
   logMsg(label: string, message: string) {
     Context.runHooks(this, "cLogMsg", [label, message]);
     Context.runHooks(this, "iLogMsg", [label, message]);
@@ -283,7 +278,6 @@ export class Context<N = any> {
     Context.runHooks(this, "iLogDebug", [label, data]);
   }
   private dispose() {
-    Context.runHooks(this, "iDispose", []);
     if (!this.parent) {
       Context.runHooks(this, "tDispose", []);
     }
@@ -305,32 +299,29 @@ function HooksState<Arg extends any[]>(
     throw new Error(`Invalid scope: ${scope}`);
   }
 }
-type $HooksFn<K extends keyof typeof hooks> = (typeof hooks)[K] extends ContextState<Array<infer X>> ? X : never;
-type $HooksArg<K extends keyof typeof hooks> = (typeof hooks)[K] extends ContextState<
-  Array<(context: Context, ...args: infer X) => void>
-> ? X
-  : never;
+type $HooksFn<K extends keyof typeof hooks> =
+  (typeof hooks)[K] extends ContextState<Array<infer X>> ? X : never;
+type $HooksArg<K extends keyof typeof hooks> =
+  (typeof hooks)[K] extends ContextState<
+    Array<(context: Context, ...args: infer X) => void>
+  >
+    ? X
+    : never;
 
 export const hooks: {
-  tInit: ContextState<THooksFn<[]>[]>;
-  cInit: ContextState<THooksFn<[]>[]>;
   iLogMsg: ContextState<THooksFn<[string, string]>[]>;
   cLogMsg: ContextState<THooksFn<[string, string]>[]>;
   iLogError: ContextState<THooksFn<[string, unknown]>[]>;
   cLogError: ContextState<THooksFn<[string, unknown]>[]>;
   iLogDebug: ContextState<THooksFn<[string, unknown]>[]>;
   cLogDebug: ContextState<THooksFn<[string, unknown]>[]>;
-  iDispose: ContextState<THooksFn<[]>[]>;
   tDispose: ContextState<THooksFn<[]>[]>;
 } = Object.freeze({
-  tInit: HooksState<[]>("T_INIT", "tree"),
-  cInit: HooksState<[]>("C_INIT", "cascade"),
   iLogMsg: HooksState<[string, string]>("I_LOG_MSG", "internal"),
   cLogMsg: HooksState<[string, string]>("C_LOG_MSG", "cascade"),
   iLogError: HooksState<[string, unknown]>("I_LOG_ERROR", "internal"),
   cLogError: HooksState<[string, unknown]>("C_LOG_ERROR", "cascade"),
   iLogDebug: HooksState<[string, unknown]>("I_LOG_DEBUG", "internal"),
   cLogDebug: HooksState<[string, unknown]>("C_LOG_DEBUG", "cascade"),
-  iDispose: HooksState<[]>("I_DISPOSE", "internal"),
   tDispose: HooksState<[]>("T_DISPOSE", "tree"),
 });

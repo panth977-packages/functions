@@ -3,9 +3,15 @@
  * @module
  */
 import type z from "zod";
-import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
+import {
+  type Func,
+  type FuncInput,
+  type FuncInvokeStack,
+  type FuncOutput,
+  type FuncTypes,
+  GenericFuncWrapper,
+} from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools";
 
 export class WFQue<
   I extends FuncInput,
@@ -41,24 +47,41 @@ export class WFQue<
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
-    port: T.PPromisePort<z.infer<O>>,
+    resolve: (value: z.infer<O>) => void,
+    reject: (reason: unknown) => void,
     done: VoidFunction,
   ) {
     const process = invokeStack.$(context, input);
-    process.onend(done);
-    process.ondata(port.return);
-    process.onerror(port.throw);
-    port.oncancel(process.cancel.bind(process));
+    process.then(
+      (value) => {
+        resolve(value);
+        done();
+      },
+      (error) => {
+        reject(error);
+        done();
+      },
+    );
   }
   override AsyncFunc(
     invokeStack: FuncInvokeStack<I, O, "AsyncFunc">,
     context: Context<Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
-  ): T.PPromise<z.infer<O>> {
-    const [port, promise] = context.node.createPort();
-    invokeStack.$.bind(invokeStack, context, input);
-    const handler = this.handler.bind(this, invokeStack, context, input, port);
-    port.oncancel(this.removeJob.bind(this, handler));
+  ): Promise<z.infer<O>> {
+    let resolve!: (value: z.infer<O>) => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<z.infer<O>>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    const handler = this.handler.bind(
+      this,
+      invokeStack,
+      context,
+      input,
+      resolve,
+      reject,
+    );
     this.addJob(handler);
     return promise;
   }
