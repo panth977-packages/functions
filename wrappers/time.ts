@@ -12,7 +12,6 @@ import {
   GenericFuncWrapper,
 } from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools"; // kept for PStream
 
 export class WFTimer<
   I extends FuncInput,
@@ -63,35 +62,29 @@ export class WFTimer<
     );
     return process;
   }
-  private streamOnNext(
-    context: Context<Func<I, O, "StreamFunc">>,
-    t: ReturnType<typeof WFTimer.logInit>,
-    i: number,
-    process: T.PStream<z.infer<O>>,
-    _data: z.infer<O>,
-  ) {
-    WFTimer.logNextEvent(context, `StreamYield-${i}`, t);
-    process.onnext(this.streamOnNext.bind(this, context, t, i + 1, process));
-  }
   protected override StreamFunc(
     invokeStack: FuncInvokeStack<I, O, "StreamFunc">,
     context: Context<Func<I, O, "StreamFunc">>,
     input: z.infer<I>,
-  ): T.PStream<z.infer<O>> {
+  ): ReadableStream<z.infer<O>> {
     const t = WFTimer.logInit(context);
     const process = invokeStack.$(context, input);
     WFTimer.logNextEvent(context, "SyncCompleted", t);
-    process.onnext(this.streamOnNext.bind(this, context, t, 0, process));
-    process.onerror(
-      WFTimer.logNextEvent.bind(WFTimer, context, "StreamError", t),
+    let i = 0;
+    return process.pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          WFTimer.logNextEvent(context, `StreamYield-${i++}`, t);
+          controller.enqueue(chunk);
+        },
+        flush() {
+          WFTimer.logNextEvent(context, "StreamComplete", t);
+        },
+        cancel() {
+          WFTimer.logNextEvent(context, "StreamCancel", t);
+        },
+      }),
     );
-    process.oncancel(
-      WFTimer.logNextEvent.bind(WFTimer, context, "StreamCancel", t),
-    );
-    process.onfinish(
-      WFTimer.logNextEvent.bind(WFTimer, context, "StreamComplete", t),
-    );
-    return process;
   }
   override ShouldIgnore(_: Func<I, O, Type>): boolean {
     return !this.time;

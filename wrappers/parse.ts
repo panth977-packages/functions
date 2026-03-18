@@ -12,7 +12,6 @@ import {
   GenericFuncWrapper,
 } from "../func.ts";
 import type { Context } from "../context.ts";
-import type { T } from "@panth977/tools"; // kept for PStream
 
 export class WFParser<
   I extends FuncInput,
@@ -94,15 +93,18 @@ export class WFParser<
     invokeStack: FuncInvokeStack<I, O, "StreamFunc">,
     context: Context<Func<I, O, "StreamFunc">>,
     input: z.infer<I>,
-  ): T.PStream<z.infer<O>> {
+  ): ReadableStream<z.infer<O>> {
     if (this.input) {
       input = WFParser.parseInput(context, this.time, input);
     }
     const process = invokeStack.$(context, input);
     if (this.output) {
-      return process.map(
-        (WFParser.parseOutput<z.infer<O>>).bind(WFParser, context, this.time),
-        process.cancel.bind(process),
+      return process.pipeThrough(
+        new TransformStream({
+          transform: (chunk, controller) => {
+            controller.enqueue(WFParser.parseOutput(context, this.time, chunk));
+          },
+        }),
       );
     }
     return process;

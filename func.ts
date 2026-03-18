@@ -4,7 +4,6 @@
  */
 import { z } from "zod";
 import { Context } from "./context.ts";
-import { T } from "@panth977/tools";
 
 export const unimplementedSchema: z.ZodNever = z.never();
 
@@ -23,7 +22,7 @@ export type FuncReturn<
   : Type extends "AsyncFunc"
     ? Promise<z.infer<O>>
     : Type extends "StreamFunc"
-      ? T.PStream<z.infer<O>>
+      ? ReadableStream<z.infer<O>>
       : never;
 export type FuncReturnLike<
   O extends FuncOutput,
@@ -33,7 +32,7 @@ export type FuncReturnLike<
   : Type extends "AsyncFunc"
     ? PromiseLike<z.infer<O>> | z.infer<O>
     : Type extends "StreamFunc"
-      ? T.PStream<z.infer<O>>
+      ? ReadableStream<z.infer<O>>
       : never;
 export type FuncExposed<
   I extends FuncInput,
@@ -239,12 +238,36 @@ export class Func<
   ): FuncReturn<O, "StreamFunc"> {
     const childContext = new Context(context, func.refString(), func);
     try {
-      const process = func.$(childContext, input);
-      process.onend(Context.dispose.bind(Context, childContext));
-      return process;
+      const readable = func.$(childContext, input);
+      const dispose = Context.dispose.bind(Context, childContext);
+      const reader = readable.getReader();
+      return new ReadableStream<z.infer<O>>({
+        async pull(controller) {
+          try {
+            const { done, value } = await reader.read();
+            if (done) {
+              dispose();
+              controller.close();
+            } else {
+              controller.enqueue(value);
+            }
+          } catch (err) {
+            dispose();
+            controller.error(err);
+          }
+        },
+        cancel() {
+          dispose();
+          return reader.cancel();
+        },
+      });
     } catch (error) {
       Context.dispose(childContext);
-      return T.PStream.reject(error);
+      return new ReadableStream({
+        start(controller) {
+          controller.error(error);
+        },
+      });
     }
   }
 
@@ -273,7 +296,7 @@ export class Func<
         promise: Promise<z.infer<O>>;
       }
     : Type extends "StreamFunc"
-      ? [T.PStreamPort<z.infer<O>>, T.PStream<z.infer<O>>]
+      ? TransformStream<z.infer<O>>
       : never {
     if (this.type === "AsyncFunc") {
       let resolve!: (value: z.infer<O>) => void;
@@ -284,7 +307,7 @@ export class Func<
       });
       return { resolve, reject, promise } as never;
     } else if (this.type === "StreamFunc") {
-      return T.$stream() as never;
+      return new TransformStream<z.infer<O>>() as never;
     } else {
       throw new Error(`Unsupported function type: ${this.type}`);
     }
