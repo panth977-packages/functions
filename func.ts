@@ -289,29 +289,6 @@ export class Func<
       input: this.input,
     });
   }
-  createPort(): Type extends "AsyncFunc"
-    ? {
-        resolve: (value: z.infer<O>) => void;
-        reject: (reason: unknown) => void;
-        promise: Promise<z.infer<O>>;
-      }
-    : Type extends "StreamFunc"
-      ? TransformStream<z.infer<O>>
-      : never {
-    if (this.type === "AsyncFunc") {
-      let resolve!: (value: z.infer<O>) => void;
-      let reject!: (reason: unknown) => void;
-      const promise = new Promise<z.infer<O>>((res, rej) => {
-        resolve = res;
-        reject = rej;
-      });
-      return { resolve, reject, promise } as never;
-    } else if (this.type === "StreamFunc") {
-      return new TransformStream<z.infer<O>>() as never;
-    } else {
-      throw new Error(`Unsupported function type: ${this.type}`);
-    }
-  }
 }
 
 /**
