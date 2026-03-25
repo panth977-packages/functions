@@ -78,10 +78,10 @@ export class ContextState<T = unknown> {
 
 export class Context<N = any> {
   readonly node: N;
-  private readonly parent: Context | null;
-  private readonly internalState: Map<ContextState, unknown>;
-  private readonly cascadeState: Map<ContextState, unknown>;
-  private readonly treeState: Map<ContextState, unknown>;
+  private parent?: Context | null;
+  private internalState?: Map<ContextState, unknown>;
+  private cascadeState?: Map<ContextState, unknown>;
+  private treeState?: Map<ContextState, unknown>;
   readonly id: string;
   readonly path: string;
 
@@ -90,7 +90,7 @@ export class Context<N = any> {
     let current: Context | null = context;
     while (current) {
       tree.push(current.path);
-      current = current.parent;
+      current = current.parent!;
     }
     return tree.reverse();
   }
@@ -119,18 +119,18 @@ export class Context<N = any> {
    */
   static getState<T>(context: Context, state: ContextState<T>): T | undefined {
     if (state.scope === "internal") {
-      return context.internalState.get(state) as T | undefined;
+      return context.internalState?.get(state) as T | undefined;
     } else if (state.scope === "cascade") {
       let current: Context | null = context;
       while (current) {
-        if (current.cascadeState.has(state)) {
+        if (current.cascadeState?.has(state)) {
           return current.cascadeState.get(state) as T;
         }
-        current = current.parent;
+        current = current.parent!;
       }
       return undefined;
     } else {
-      return context.treeState.get(state) as T | undefined;
+      return context.treeState?.get(state) as T | undefined;
     }
   }
 
@@ -142,7 +142,7 @@ export class Context<N = any> {
    */
   static getAllStates<T>(context: Context, state: ContextState<T>): T[] {
     if (state.scope === "internal") {
-      if (context.internalState.has(state)) {
+      if (context.internalState?.has(state)) {
         return [context.internalState.get(state) as T];
       } else {
         return [];
@@ -151,14 +151,14 @@ export class Context<N = any> {
       let current: Context | null = context;
       const states: T[] = [];
       while (current) {
-        if (current.cascadeState.has(state)) {
+        if (current.cascadeState?.has(state)) {
           states.push(current.cascadeState.get(state) as T);
         }
-        current = current.parent;
+        current = current.parent!;
       }
       return states;
     } else {
-      if (context.treeState.has(state)) {
+      if (context.treeState?.has(state)) {
         return [context.treeState.get(state) as T];
       } else {
         return [];
@@ -176,20 +176,20 @@ export class Context<N = any> {
       let current: Context | null = context;
       let hasState = false;
       while (current) {
-        if (current.cascadeState.has(state)) {
+        if (current.cascadeState?.has(state)) {
           hasState = true;
           break;
         }
-        current = current.parent;
+        current = current.parent!;
       }
       if (hasState) throw new Error("Cannot set a readonly state");
     }
     if (state.scope === "internal") {
-      context.internalState.set(state, value);
+      context.internalState?.set(state, value);
     } else if (state.scope === "cascade") {
-      context.cascadeState.set(state, value);
+      context.cascadeState?.set(state, value);
     } else {
-      context.treeState.set(state, value);
+      context.treeState?.set(state, value);
     }
   }
 
@@ -277,10 +277,19 @@ export class Context<N = any> {
     Context.runHooks(this, "cLogDebug", [label, data]);
     Context.runHooks(this, "iLogDebug", [label, data]);
   }
+  private disposed = false;
   private dispose() {
+    if (this.disposed) return;
     if (!this.parent) {
       Context.runHooks(this, "tDispose", []);
     }
+    this.cascadeState?.clear();
+    this.internalState?.clear();
+    delete this.cascadeState;
+    delete this.treeState;
+    delete this.internalState;
+    delete this.parent;
+    this.disposed = true;
   }
 }
 
