@@ -239,25 +239,24 @@ export class Func<
     const childContext = new Context(context, func.refString(), func);
     try {
       const readable = func.$(childContext, input);
-      const dispose = Context.dispose.bind(Context, childContext);
       const reader = readable.getReader();
       return new ReadableStream<z.infer<O>>({
         async pull(controller) {
           try {
             const { done, value } = await reader.read();
             if (done) {
-              dispose();
+              Context.dispose(childContext);
               controller.close();
             } else {
               controller.enqueue(value);
             }
           } catch (err) {
-            dispose();
+            Context.dispose(childContext);
             controller.error(err);
           }
         },
         cancel() {
-          dispose();
+          Context.dispose(childContext);
           return reader.cancel();
         },
       });
