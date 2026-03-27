@@ -3,14 +3,7 @@
  * @module
  */
 import type z from "zod";
-import {
-  type Func,
-  type FuncInput,
-  type FuncInvokeStack,
-  type FuncOutput,
-  type FuncTypes,
-  GenericFuncWrapper,
-} from "../func.ts";
+import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
 
 export class WFTimer<
@@ -75,7 +68,11 @@ export class WFTimer<
       new TransformStream({
         transform(chunk, controller) {
           WFTimer.logNextEvent(context, `StreamYield-${i++}`, t);
-          controller.enqueue(chunk);
+          try {
+            controller.enqueue(chunk);
+          } catch {
+            // stream already closed/cancelled or parse error — skip
+          }
         },
         flush() {
           WFTimer.logNextEvent(context, "StreamComplete", t);

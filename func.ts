@@ -17,23 +17,17 @@ export type FuncOutput = z.ZodType;
 export type FuncReturn<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc"
-  ? z.infer<O>
-  : Type extends "AsyncFunc"
-    ? Promise<z.infer<O>>
-    : Type extends "StreamFunc"
-      ? ReadableStream<z.infer<O>>
-      : never;
+> = Type extends "SyncFunc" ? z.infer<O>
+  : Type extends "AsyncFunc" ? Promise<z.infer<O>>
+  : Type extends "StreamFunc" ? ReadableStream<z.infer<O>>
+  : never;
 export type FuncReturnLike<
   O extends FuncOutput,
   Type extends FuncTypes,
-> = Type extends "SyncFunc"
-  ? z.infer<O>
-  : Type extends "AsyncFunc"
-    ? PromiseLike<z.infer<O>> | z.infer<O>
-    : Type extends "StreamFunc"
-      ? ReadableStream<z.infer<O>>
-      : never;
+> = Type extends "SyncFunc" ? z.infer<O>
+  : Type extends "AsyncFunc" ? PromiseLike<z.infer<O>> | z.infer<O>
+  : Type extends "StreamFunc" ? ReadableStream<z.infer<O>>
+  : never;
 export type FuncExposed<
   I extends FuncInput,
   O extends FuncOutput,
@@ -245,14 +239,28 @@ export class Func<
           try {
             const { done, value } = await reader.read();
             if (done) {
-              Context.dispose(childContext);
-              controller.close();
+              try {
+                controller.close();
+              } catch {
+                // stream already closed/cancelled or parse error — skip
+              } finally {
+                Context.dispose(childContext);
+              }
             } else {
-              controller.enqueue(value);
+              try {
+                controller.enqueue(value);
+              } catch {
+                // stream already closed/cancelled or parse error — skip
+              }
             }
           } catch (err) {
-            Context.dispose(childContext);
-            controller.error(err);
+            try {
+              controller.error(err);
+            } catch {
+              // stream already closed/cancelled or parse error — skip
+            } finally {
+              Context.dispose(childContext);
+            }
           }
         },
         cancel() {

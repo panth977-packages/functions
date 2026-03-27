@@ -3,14 +3,7 @@
  * @module
  */
 import type z from "zod";
-import {
-  type Func,
-  type FuncInput,
-  type FuncInvokeStack,
-  type FuncOutput,
-  type FuncTypes,
-  GenericFuncWrapper,
-} from "../func.ts";
+import { type Func, type FuncInput, type FuncInvokeStack, type FuncOutput, type FuncTypes, GenericFuncWrapper } from "../func.ts";
 import type { Context } from "../context.ts";
 
 export class WFParser<
@@ -102,7 +95,12 @@ export class WFParser<
       return process.pipeThrough(
         new TransformStream({
           transform: (chunk, controller) => {
-            controller.enqueue(WFParser.parseOutput(context, this.time, chunk));
+            const val = WFParser.parseOutput(context, this.time, chunk);
+            try {
+              controller.enqueue(val);
+            } catch {
+              // stream already closed/cancelled or parse error — skip
+            }
           },
         }),
       );
