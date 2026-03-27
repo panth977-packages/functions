@@ -234,36 +234,27 @@ export class Func<
     try {
       const readable = func.$(childContext, input);
       const reader = readable.getReader();
+      let controller: ReadableStreamDefaultController<z.TypeOf<O>> | null = null;
       return new ReadableStream<z.infer<O>>({
-        async pull(controller) {
+        start(_controller) {
+          controller = _controller;
+        },
+        async pull() {
           try {
             const { done, value } = await reader.read();
             if (done) {
-              try {
-                controller.close();
-              } catch {
-                // stream already closed/cancelled or parse error — skip
-              } finally {
-                Context.dispose(childContext);
-              }
+              controller?.close();
+              Context.dispose(childContext);
             } else {
-              try {
-                controller.enqueue(value);
-              } catch {
-                // stream already closed/cancelled or parse error — skip
-              }
+              controller?.enqueue(value);
             }
           } catch (err) {
-            try {
-              controller.error(err);
-            } catch {
-              // stream already closed/cancelled or parse error — skip
-            } finally {
-              Context.dispose(childContext);
-            }
+            controller?.error(err);
+            Context.dispose(childContext);
           }
         },
         cancel() {
+          controller = null;
           Context.dispose(childContext);
           return reader.cancel();
         },

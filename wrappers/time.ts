@@ -68,11 +68,7 @@ export class WFTimer<
       new TransformStream({
         transform(chunk, controller) {
           WFTimer.logNextEvent(context, `StreamYield-${i++}`, t);
-          try {
-            controller.enqueue(chunk);
-          } catch {
-            // stream already closed/cancelled or parse error — skip
-          }
+          controller.enqueue(chunk);
         },
         flush() {
           WFTimer.logNextEvent(context, "StreamComplete", t);

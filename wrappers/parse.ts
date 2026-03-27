@@ -95,12 +95,7 @@ export class WFParser<
       return process.pipeThrough(
         new TransformStream({
           transform: (chunk, controller) => {
-            const val = WFParser.parseOutput(context, this.time, chunk);
-            try {
-              controller.enqueue(val);
-            } catch {
-              // stream already closed/cancelled or parse error — skip
-            }
+            controller.enqueue(WFParser.parseOutput(context, this.time, chunk));
           },
         }),
       );
