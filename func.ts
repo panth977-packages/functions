@@ -229,18 +229,11 @@ export class Func<
     const out = func.$(childContext, input);
     const stream = new T.PStream<z.infer<O>>();
     (async function () {
-      let isCanceled = false;
-      stream.onAbort(() => isCanceled = true);
       try {
-        for await (const element of T.PStream.Iterable(out)) {
-          if (isCanceled) break;
+        for await (const element of T.PStream.Iterable(out, stream.onAbort.bind(stream))) {
           stream.emit(element);
         }
-        if (isCanceled) {
-          out.cancel();
-        } else {
-          stream.close();
-        }
+        stream.close();
       } catch (err) {
         stream.error(err);
       } finally {

@@ -1,12 +1,12 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@panth977/tools@^2.4.2": "2.4.2",
+    "jsr:@panth977/tools@^2.4.3": "2.4.3",
     "npm:zod@^3.25.76": "3.25.76"
   },
   "jsr": {
-    "@panth977/tools@2.4.2": {
-      "integrity": "59e1282cf33fcd7f70fc9f349e70918c9d689949cf1d3e7d22a9a5cea1a67950",
+    "@panth977/tools@2.4.3": {
+      "integrity": "9ff3a8a428a38baa0fe060535344c614e520042652ed74d4c7576a80ad378bb4",
       "dependencies": [
         "npm:zod"
       ]
@@ -19,7 +19,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/tools@^2.4.2",
+      "jsr:@panth977/tools@^2.4.3",
       "npm:zod@^3.25.76"
     ]
   }
