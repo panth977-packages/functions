@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { Context } from "./context.ts";
+import { T } from "@panth977/tools";
 
 export const unimplementedSchema: z.ZodNever = z.never();
 
@@ -207,22 +208,16 @@ export class Func<
       Context.dispose(childContext);
     }
   }
-  static buildAsyncFunc<I extends FuncInput, O extends FuncOutput>(
+  static async buildAsyncFunc<I extends FuncInput, O extends FuncOutput>(
     func: Func<I, O, "AsyncFunc">,
     context: Context,
     input: z.infer<I>,
   ): FuncReturn<O, "AsyncFunc"> {
     const childContext = new Context(context, func.refString(), func);
     try {
-      const promise = func.$(childContext, input);
-      promise.then(
-        () => Context.dispose(childContext),
-        () => Context.dispose(childContext),
-      );
-      return promise;
-    } catch (error) {
+      return await func.$(childContext, input);
+    } finally {
       Context.dispose(childContext);
-      return Promise.reject(error);
     }
   }
   static buildStreamFunc<I extends FuncInput, O extends FuncOutput>(
@@ -231,42 +226,24 @@ export class Func<
     input: z.infer<I>,
   ): FuncReturn<O, "StreamFunc"> {
     const childContext = new Context(context, func.refString(), func);
-    try {
-      const readable = func.$(childContext, input);
-      const reader = readable.getReader();
-      let controller: ReadableStreamDefaultController<z.TypeOf<O>> | null = null;
-      return new ReadableStream<z.infer<O>>({
-        start(_controller) {
-          controller = _controller;
-        },
-        async pull() {
-          try {
-            const { done, value } = await reader.read();
-            if (done) {
-              controller?.close();
-              Context.dispose(childContext);
-            } else {
-              controller?.enqueue(value);
-            }
-          } catch (err) {
-            controller?.error(err);
-            Context.dispose(childContext);
-          }
-        },
-        cancel() {
-          controller = null;
-          Context.dispose(childContext);
-          return reader.cancel();
-        },
-      });
-    } catch (error) {
-      Context.dispose(childContext);
-      return new ReadableStream({
-        start(controller) {
-          controller.error(error);
-        },
-      });
-    }
+    const out = func.$(childContext, input);
+    const stream = new T.PStream<z.infer<O>>();
+    (async function () {
+      let isClosed = false;
+      stream.onAbort(() => isClosed = true);
+      try {
+        for await (const element of T.PStream.Iterable(out)) {
+          if (isClosed) return;
+          stream.emit(element);
+        }
+        stream.close();
+      } catch (err) {
+        stream.error(err);
+      } finally {
+        Context.dispose(childContext);
+      }
+    })();
+    return stream.stream;
   }
 
   create(): FuncExported<I, O, Type> {
