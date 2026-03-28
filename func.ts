@@ -233,7 +233,10 @@ export class Func<
       stream.onAbort(() => isClosed = true);
       try {
         for await (const element of T.PStream.Iterable(out)) {
-          if (isClosed) return;
+          if (isClosed) {
+            out.cancel();
+            return;
+          }
           stream.emit(element);
         }
         stream.close();
