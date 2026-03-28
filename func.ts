@@ -226,20 +226,10 @@ export class Func<
     input: z.infer<I>,
   ): FuncReturn<O, "StreamFunc"> {
     const childContext = new Context(context, func.refString(), func);
-    const out = func.$(childContext, input);
     const stream = new T.PStream<z.infer<O>>();
-    (async function () {
-      try {
-        for await (const element of T.PStream.Iterable(out, stream.onAbort.bind(stream))) {
-          stream.emit(element);
-        }
-        stream.close();
-      } catch (err) {
-        stream.error(err);
-      } finally {
-        Context.dispose(childContext);
-      }
-    })();
+    T.PStream.TransferStream(func.$(childContext, input), stream, {
+      listen: stream.emit.bind(stream),
+    });
     return stream.stream;
   }
 
