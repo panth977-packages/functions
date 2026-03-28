@@ -4,7 +4,6 @@
  */
 import { z } from "zod";
 import { Context } from "./context.ts";
-import { T } from "@panth977/tools";
 
 export const unimplementedSchema: z.ZodNever = z.never();
 
@@ -196,55 +195,18 @@ export class Func<
     return `${this.ref.namespace}:${this.ref.name}`;
   }
 
-  static buildSyncFunc<I extends FuncInput, O extends FuncOutput>(
-    func: Func<I, O, "SyncFunc">,
+  static buildFunc<I extends FuncInput, O extends FuncOutput, Type extends FuncTypes>(
+    func: Func<I, O, Type>,
     context: Context,
     input: z.infer<I>,
-  ): FuncReturn<O, "SyncFunc"> {
+  ): FuncReturn<O, Type> {
     const childContext = new Context(context, func.refString(), func);
-    try {
-      return func.$(childContext, input);
-    } finally {
-      Context.dispose(childContext);
-    }
-  }
-  static async buildAsyncFunc<I extends FuncInput, O extends FuncOutput>(
-    func: Func<I, O, "AsyncFunc">,
-    context: Context,
-    input: z.infer<I>,
-  ): FuncReturn<O, "AsyncFunc"> {
-    const childContext = new Context(context, func.refString(), func);
-    try {
-      return await func.$(childContext, input);
-    } finally {
-      Context.dispose(childContext);
-    }
-  }
-  static buildStreamFunc<I extends FuncInput, O extends FuncOutput>(
-    func: Func<I, O, "StreamFunc">,
-    context: Context,
-    input: z.infer<I>,
-  ): FuncReturn<O, "StreamFunc"> {
-    const childContext = new Context(context, func.refString(), func);
-    const stream = new T.PStream<z.infer<O>>();
-    T.PStream.TransferStream(func.$(childContext, input), stream, {
-      listen: stream.emit.bind(stream),
-    });
-    return stream.stream;
+    return func.$(childContext, input);
   }
 
   create(): FuncExported<I, O, Type> {
     Object.freeze(this);
-    let build: any;
-    if (this.type === "AsyncFunc") {
-      build = Func.buildAsyncFunc.bind(Func, this as any);
-    } else if (this.type === "SyncFunc") {
-      build = Func.buildSyncFunc.bind(Func, this as any);
-    } else if (this.type === "StreamFunc") {
-      build = Func.buildStreamFunc.bind(Func, this as any);
-    } else {
-      throw new Error(`Unsupported function type: ${this.type}`);
-    }
+    const build: any = Func.buildFunc.bind(Func, this as any);
     return Object.assign(build, {
       node: this,
       output: this.output,
